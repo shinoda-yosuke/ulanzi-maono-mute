@@ -191,6 +191,17 @@ describe('registerMuteAction', () => {
     assert.ok(api.sent.some(([type, payload]) => type === 'sendToPropertyInspector' && payload.methods[1].available));
   });
 
+  it('answers the property inspector and starts the methods even before the key is added', async () => {
+    await emit('sendToPlugin', { context: context('0_0'), payload: { type: 'inspect' } });
+    assert.equal(link.starts, 1, 'started the methods');
+    assert.equal(hid.starts, 1);
+    const [[type, report]] = take();
+    assert.equal(type, 'sendToPropertyInspector');
+    assert.equal(report.type, 'status');
+    assert.equal(report.priority, 'link-hid');
+    assert.deepEqual(report.methods.map((method) => method.name), ['maono-link', 'hid']);
+  });
+
   it('ignores other messages from the property inspector', async () => {
     await emit('sendToPlugin', { context: context('0_0'), payload: { type: 'other' } });
     await emit('sendToPlugin', { context: context('0_0') });

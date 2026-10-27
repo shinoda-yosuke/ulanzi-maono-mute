@@ -67,7 +67,8 @@ export function registerMuteAction({ api, methods }) {
   };
 
   const describeTo = (context) => {
-    const key = keys.get(context);
+    // The property inspector can ask before the key's "add" has been remembered
+    const key = keys.get(context) ?? { priority: DEFAULT_PRIORITY, pos: 0 };
     const report = {
       type: 'status',
       priority: key.priority,
@@ -164,6 +165,9 @@ export function registerMuteAction({ api, methods }) {
   api.onSendToPlugin(({ context, payload }) => {
     if (payload?.type !== 'inspect') return;
     inspector = context;
+    // The property inspector may open before any key event started the methods; make sure they are running so
+    // the status fills in. describeTo is resent from onChange as each method comes up.
+    for (const method of methods) method.start();
     describeTo(context);
   });
 }
