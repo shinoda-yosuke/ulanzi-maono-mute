@@ -16,6 +16,9 @@ import { startFakeHost } from './fake-host.js';
 
 const node = process.env.PLUGIN_NODE || process.execPath;
 const maonoLinkServer = fileURLToPath(new URL('./fixtures/maono-link-server.mjs', import.meta.url));
+// A fake HID helper that reports no device, so these scenarios exercise the Maono Link (IPC) path and never
+// touch real hardware. Without this the plugin would run the real maono-hid against the actual microphone.
+const fakeHid = fileURLToPath(new URL('./fixtures/fake-maono-hid.mjs', import.meta.url));
 
 /**
  * Runs the fake Maono Link as its own process (not the test process, which is the plugin's parent), waits until
@@ -59,7 +62,10 @@ describe('plugin/app.js against a fake Ulanzi Studio', () => {
     plugin = spawn(
       node,
       [path.join(PLUGIN_DIR, 'plugin', 'app.js'), '127.0.0.1', String(host.port), 'ja-JP', '3.3.9'],
-      { stdio: ['ignore', 'pipe', 'pipe'], env: { ...process.env, MAONO_LINK_SOCKET: socketPath } },
+      {
+        stdio: ['ignore', 'pipe', 'pipe'],
+        env: { ...process.env, MAONO_LINK_SOCKET: socketPath, MAONO_MUTE_HELPER: fakeHid, FAKE_HID_STATE: '' },
+      },
     );
     plugin.stdout.on('data', (chunk) => (output += chunk));
     plugin.stderr.on('data', (chunk) => (output += chunk));

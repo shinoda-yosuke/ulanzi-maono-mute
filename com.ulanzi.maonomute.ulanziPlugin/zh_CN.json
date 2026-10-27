@@ -1,6 +1,6 @@
 {
   "Name": "Maono 麦克风静音",
-  "Description": "通过 Maono Link 一键将 Maono 麦克风静音或取消静音——是会点亮设备 LED 的真正静音。按键会显示是否已静音。",
+  "Description": "一键将 Maono 麦克风静音或取消静音——是会点亮设备 LED 的真正静音。可独立工作，也可通过 Maono Link 工作。按键会显示是否已静音。",
   "Actions": [
     {
       "Name": "切换静音",
@@ -12,10 +12,10 @@
     "Loading…": "加载中…",
     "On": "开启",
     "Muted": "已静音",
-    "Maono Link is not running, or the microphone panel is not open.": "Maono Link 未运行，或未打开麦克风的界面。",
-    "This mutes the microphone itself through Maono Link — the device mute LED lights, the same as its own mute button.": "通过 Maono Link 将麦克风本身静音。与其静音按钮一样，设备的静音 LED 会点亮。",
-    "Keep Maono Link running with your microphone panel open; otherwise the key cannot reach the mute.": "请保持 Maono Link 运行并打开麦克风的界面，否则按键无法操作静音。",
-    "Open Maono Link and show your microphone so the key can mute it.": "请启动 Maono Link 并打开麦克风的界面，这样按键才能将其静音。",
+    "The microphone is not connected, and Maono Link is not open.": "麦克风未连接，且 Maono Link 也未打开。",
+    "This is the real microphone mute — the device mute LED lights, the same as its own mute button.": "这是真正的麦克风静音——与其静音按钮一样，设备的静音 LED 会点亮。",
+    "It works on its own; and through Maono Link when its microphone panel is open.": "它可独立工作；当麦克风界面打开时，也可通过 Maono Link 工作。",
+    "Connect your Maono microphone, or open Maono Link, so the key can mute it.": "请连接 Maono 麦克风，或打开 Maono Link，这样按键才能将其静音。",
     "Could not change the mute of the microphone.": "无法切换麦克风的静音状态。"
   }
 }

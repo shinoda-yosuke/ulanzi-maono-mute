@@ -1,6 +1,6 @@
 {
   "Name": "Maono-Mikrofon stummschalten",
-  "Description": "Schaltet ein Maono-Mikrofon per Tastendruck über Maono Link stumm und wieder ein — die echte Stummschaltung mit Geräte-LED. Die Taste zeigt an, ob das Mikrofon stumm ist.",
+  "Description": "Schaltet ein Maono-Mikrofon per Tastendruck stumm und wieder ein — die echte Stummschaltung mit Geräte-LED. Funktioniert eigenständig oder über Maono Link. Die Taste zeigt an, ob das Mikrofon stumm ist.",
   "Actions": [
     {
       "Name": "Stummschaltung umschalten",
@@ -12,10 +12,10 @@
     "Loading…": "Wird geladen …",
     "On": "An",
     "Muted": "Stumm",
-    "Maono Link is not running, or the microphone panel is not open.": "Maono Link läuft nicht, oder das Fenster des Mikrofons ist nicht geöffnet.",
-    "This mutes the microphone itself through Maono Link — the device mute LED lights, the same as its own mute button.": "Schaltet das Mikrofon selbst über Maono Link stumm. Wie bei dessen Stummschalttaste leuchtet die Stumm-LED des Geräts.",
-    "Keep Maono Link running with your microphone panel open; otherwise the key cannot reach the mute.": "Lass Maono Link mit geöffnetem Mikrofon-Fenster laufen; sonst erreicht die Taste die Stummschaltung nicht.",
-    "Open Maono Link and show your microphone so the key can mute it.": "Starte Maono Link und öffne dein Mikrofon, damit die Taste es stummschalten kann.",
+    "The microphone is not connected, and Maono Link is not open.": "Das Mikrofon ist nicht angeschlossen und Maono Link ist nicht geöffnet.",
+    "This is the real microphone mute — the device mute LED lights, the same as its own mute button.": "Das ist die echte Mikrofon-Stummschaltung — wie bei dessen Stummschalttaste leuchtet die Stumm-LED des Geräts.",
+    "It works on its own; and through Maono Link when its microphone panel is open.": "Funktioniert eigenständig; und über Maono Link, wenn dessen Mikrofon-Fenster geöffnet ist.",
+    "Connect your Maono microphone, or open Maono Link, so the key can mute it.": "Schließe dein Maono-Mikrofon an oder öffne Maono Link, damit die Taste es stummschalten kann.",
     "Could not change the mute of the microphone.": "Die Stummschaltung des Mikrofons konnte nicht geändert werden."
   }
 }
