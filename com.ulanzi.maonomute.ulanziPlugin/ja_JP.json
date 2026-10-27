@@ -1,32 +1,21 @@
 {
   "Name": "Maono マイクミュート",
-  "Description": "Maono の USB マイクを、Maono Link と同じようにキー 1 つでミュート・解除します。ミュート中かどうかはキーの表示でわかります。",
+  "Description": "Maono Link 経由で Maono のマイクをキー 1 つでミュート・解除します。デバイスの LED が点く本物のミュートです。ミュート中かどうかはキーの表示でわかります。",
   "Actions": [
     {
       "Name": "ミュート切り替え",
-      "Tooltip": "Maono マイクのミュートを切り替えます。キーにミュート状態を表示します"
+      "Tooltip": "Maono マイクのミュートを切り替えます（本体の LED が点灯）。キーにミュート状態を表示します"
     }
   ],
   "Localization": {
-    "Mute method": "ミュート方式",
-    "Maono Link first, then USB": "Maono Link 優先、なければ USB",
-    "USB first, then Maono Link": "USB 優先、なければ Maono Link",
-    "Maono Link only": "Maono Link のみ",
-    "USB (direct) only": "USB（直接）のみ",
     "Status": "状態",
-    "Maono Link": "Maono Link",
-    "USB (direct)": "USB（直接）",
-    "not running": "未起動",
-    "microphone not connected": "マイク未接続",
-    "available": "利用可",
-    "Muted": "ミュート中",
-    "On": "オン",
     "Loading…": "読み込み中…",
-    "Maono Link mutes exactly like its own mute button. USB (direct) talks to the microphone itself, so it works even when Maono Link is closed.": "Maono Link はそのミュートボタンと同じ動作をします。USB（直接）はマイク本体と通信するため、Maono Link を閉じていても動きます。",
-    "While Maono Link is showing the microphone it holds it, so the USB method is busy then; the key falls back to the other method.": "Maono Link がマイクの画面を表示している間はマイクを占有するため、そのときは USB 方式がビジーになり、キーはもう一方の方式にフォールバックします。",
-    "Maono Link is not running.": "Maono Link が起動していません。",
-    "The microphone is not connected.": "マイクが接続されていません。",
-    "No way to mute the microphone is available.": "ミュートできる方式がありません。",
+    "On": "オン",
+    "Muted": "ミュート中",
+    "Maono Link is not running, or the microphone panel is not open.": "Maono Link が起動していないか、マイクの画面が開かれていません。",
+    "This mutes the microphone itself through Maono Link — the device mute LED lights, the same as its own mute button.": "Maono Link 経由でマイク本体をミュートします。ミュートボタンと同じく、本体のミュート LED が点灯します。",
+    "Keep Maono Link running with your microphone panel open; otherwise the key cannot reach the mute.": "Maono Link を起動し、マイクの画面を開いたままにしてください。閉じているとキーからミュートを操作できません。",
+    "Open Maono Link and show your microphone so the key can mute it.": "Maono Link を起動し、マイクの画面を開いてください。そうすればキーでミュートできます。",
     "Could not change the mute of the microphone.": "マイクのミュートを切り替えられませんでした。"
   }
 }

@@ -1,32 +1,21 @@
 {
   "Name": "Maono 麦克风静音",
-  "Description": "像 Maono Link 一样，一键将 Maono USB 麦克风静音或取消静音。按键会显示麦克风是否已静音。",
+  "Description": "通过 Maono Link 一键将 Maono 麦克风静音或取消静音——是会点亮设备 LED 的真正静音。按键会显示是否已静音。",
   "Actions": [
     {
       "Name": "切换静音",
-      "Tooltip": "将 Maono 麦克风静音或取消静音；按键显示是否已静音"
+      "Tooltip": "将 Maono 麦克风静音或取消静音（设备 LED 点亮）；按键显示是否已静音"
     }
   ],
   "Localization": {
-    "Mute method": "静音方式",
-    "Maono Link first, then USB": "优先 Maono Link，其次 USB",
-    "USB first, then Maono Link": "优先 USB，其次 Maono Link",
-    "Maono Link only": "仅 Maono Link",
-    "USB (direct) only": "仅 USB（直接）",
     "Status": "状态",
-    "Maono Link": "Maono Link",
-    "USB (direct)": "USB（直接）",
-    "not running": "未运行",
-    "microphone not connected": "麦克风未连接",
-    "available": "可用",
-    "Muted": "已静音",
-    "On": "开启",
     "Loading…": "加载中…",
-    "Maono Link mutes exactly like its own mute button. USB (direct) talks to the microphone itself, so it works even when Maono Link is closed.": "Maono Link 的效果与其静音按钮完全相同。USB（直接）直接与麦克风通信，因此即使关闭 Maono Link 也能工作。",
-    "While Maono Link is showing the microphone it holds it, so the USB method is busy then; the key falls back to the other method.": "当 Maono Link 显示该麦克风时会占用它，此时 USB 方式繁忙，按键会回退到另一种方式。",
-    "Maono Link is not running.": "Maono Link 未运行。",
-    "The microphone is not connected.": "麦克风未连接。",
-    "No way to mute the microphone is available.": "没有可用的静音方式。",
+    "On": "开启",
+    "Muted": "已静音",
+    "Maono Link is not running, or the microphone panel is not open.": "Maono Link 未运行，或未打开麦克风的界面。",
+    "This mutes the microphone itself through Maono Link — the device mute LED lights, the same as its own mute button.": "通过 Maono Link 将麦克风本身静音。与其静音按钮一样，设备的静音 LED 会点亮。",
+    "Keep Maono Link running with your microphone panel open; otherwise the key cannot reach the mute.": "请保持 Maono Link 运行并打开麦克风的界面，否则按键无法操作静音。",
+    "Open Maono Link and show your microphone so the key can mute it.": "请启动 Maono Link 并打开麦克风的界面，这样按键才能将其静音。",
     "Could not change the mute of the microphone.": "无法切换麦克风的静音状态。"
   }
 }

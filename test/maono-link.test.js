@@ -98,8 +98,8 @@ describe('MaonoLink', () => {
     assert.equal(link.state.available, true);
     assert.equal(link.state.currentPos, 0);
     // It asked for the mute of the current position
-    assert.deepEqual(socket.last, { cmd: 'get', pos: 0, type: 8 });
-    socket.say({ event: 'reply', pos: 0, type: 8, value: 1 });
+    assert.deepEqual(socket.last, { cmd: 'get', pos: 0, type: 5 });
+    socket.say({ event: 'reply', pos: 0, type: 5, value: 1 });
     await settle();
     assert.equal(link.isMuted(0), true);
     assert.ok(changes.includes(true));
@@ -107,10 +107,10 @@ describe('MaonoLink', () => {
 
   it('follows mute changes made elsewhere', async () => {
     const socket = await connect();
-    socket.say({ event: 'reply', pos: 0, type: 8, value: 0 });
+    socket.say({ event: 'reply', pos: 0, type: 5, value: 0 });
     await settle();
     assert.equal(link.isMuted(0), false);
-    socket.say({ event: 'update', pos: 0, type: 8, value: 1 });
+    socket.say({ event: 'update', pos: 0, type: 5, value: 1 });
     await settle();
     assert.equal(link.isMuted(0), true);
     // Ignores the level-meter stream
@@ -123,15 +123,15 @@ describe('MaonoLink', () => {
     const socket = await connect();
     const done = link.setMute(0, true);
     await settle();
-    assert.deepEqual(socket.last, { cmd: 'set', pos: 0, type: 8, value: 1, seq: socket.last.seq });
-    socket.say({ event: 'ack', pos: 0, type: 8, seq: socket.last.seq, current_value: 1 });
+    assert.deepEqual(socket.last, { cmd: 'set', pos: 0, type: 5, value: 1, seq: socket.last.seq });
+    socket.say({ event: 'ack', pos: 0, type: 5, seq: socket.last.seq, current_value: 1 });
     assert.equal(await done, true);
     assert.equal(link.isMuted(0), true);
   });
 
   it('toggles from the last known state', async () => {
     const socket = await connect();
-    socket.say({ event: 'reply', pos: 0, type: 8, value: 0 });
+    socket.say({ event: 'reply', pos: 0, type: 5, value: 0 });
     await settle();
     // Resolves only on the ack, which this test does not send; stop() will reject it
     link.toggleMute(0).catch(() => {});

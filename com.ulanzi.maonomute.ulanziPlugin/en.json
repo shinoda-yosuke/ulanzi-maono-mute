@@ -1,32 +1,21 @@
 {
   "Name": "Maono Mic Mute",
-  "Description": "Mute and unmute a Maono USB microphone with a key press, the same way Maono Link does. The key shows whether the microphone is muted.",
+  "Description": "Mute and unmute a Maono microphone with a key press, through Maono Link — the real mute, with the device LED. The key shows whether the microphone is muted.",
   "Actions": [
     {
       "Name": "Toggle Mute",
-      "Tooltip": "Mute or unmute the Maono microphone; the key shows whether it is muted"
+      "Tooltip": "Mute or unmute the Maono microphone (the device LED lights); the key shows whether it is muted"
     }
   ],
   "Localization": {
-    "Mute method": "Mute method",
-    "Maono Link first, then USB": "Maono Link first, then USB",
-    "USB first, then Maono Link": "USB first, then Maono Link",
-    "Maono Link only": "Maono Link only",
-    "USB (direct) only": "USB (direct) only",
     "Status": "Status",
-    "Maono Link": "Maono Link",
-    "USB (direct)": "USB (direct)",
-    "not running": "not running",
-    "microphone not connected": "microphone not connected",
-    "available": "available",
-    "Muted": "Muted",
-    "On": "On",
     "Loading…": "Loading…",
-    "Maono Link mutes exactly like its own mute button. USB (direct) talks to the microphone itself, so it works even when Maono Link is closed.": "Maono Link mutes exactly like its own mute button. USB (direct) talks to the microphone itself, so it works even when Maono Link is closed.",
-    "While Maono Link is showing the microphone it holds it, so the USB method is busy then; the key falls back to the other method.": "While Maono Link is showing the microphone it holds it, so the USB method is busy then; the key falls back to the other method.",
-    "Maono Link is not running.": "Maono Link is not running.",
-    "The microphone is not connected.": "The microphone is not connected.",
-    "No way to mute the microphone is available.": "No way to mute the microphone is available.",
+    "On": "On",
+    "Muted": "Muted",
+    "Maono Link is not running, or the microphone panel is not open.": "Maono Link is not running, or the microphone panel is not open.",
+    "This mutes the microphone itself through Maono Link — the device mute LED lights, the same as its own mute button.": "This mutes the microphone itself through Maono Link — the device mute LED lights, the same as its own mute button.",
+    "Keep Maono Link running with your microphone panel open; otherwise the key cannot reach the mute.": "Keep Maono Link running with your microphone panel open; otherwise the key cannot reach the mute.",
+    "Open Maono Link and show your microphone so the key can mute it.": "Open Maono Link and show your microphone so the key can mute it.",
     "Could not change the mute of the microphone.": "Could not change the mute of the microphone."
   }
 }

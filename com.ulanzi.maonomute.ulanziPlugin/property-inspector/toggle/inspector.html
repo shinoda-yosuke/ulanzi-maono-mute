@@ -6,23 +6,16 @@
   <title>Toggle Mute</title>
   <link rel="stylesheet" href="../../libs/css/uspi.css">
   <style>
-    .methods {
+    .status {
       width: var(--uspi-width);
-      display: flex;
-      flex-direction: column;
-      gap: 4px;
-    }
-    .method {
-      display: flex;
-      justify-content: space-between;
-      gap: 10px;
+      min-width: 0;
       font-size: 12px;
       line-height: 16px;
+      overflow-wrap: anywhere;
     }
-    .method .label { color: var(--uspi-textcolor); }
-    .method .value { color: var(--uspi-unitcolor); text-align: right; overflow-wrap: anywhere; }
-    .method .value.ok { color: var(--uspi-theme); }
-    .method .value.off { color: #ff6b6b; }
+    .status.live { color: var(--uspi-theme); }
+    .status.muted,
+    .status.error { color: #ff6b6b; }
     .note {
       margin: 0 10px 6px calc(var(--uspi-label-width) + 20px);
       max-width: var(--uspi-width);
@@ -35,22 +28,12 @@
 <body>
   <div class="uspi-wrapper hidden">
     <div class="uspi-item">
-      <label class="uspi-item-label" for="priority" data-localize>Mute method</label>
-      <select class="uspi-item-value" id="priority">
-        <option value="link-hid" data-localize>Maono Link first, then USB</option>
-        <option value="hid-link" data-localize>USB first, then Maono Link</option>
-        <option value="link" data-localize>Maono Link only</option>
-        <option value="hid" data-localize>USB (direct) only</option>
-      </select>
-    </div>
-
-    <div class="uspi-item">
       <div class="uspi-item-label" data-localize>Status</div>
-      <div class="methods" id="status"></div>
+      <span id="status" class="status" role="status" aria-live="polite"></span>
     </div>
 
-    <p class="note" data-localize>Maono Link mutes exactly like its own mute button. USB (direct) talks to the microphone itself, so it works even when Maono Link is closed.</p>
-    <p class="note" data-localize>While Maono Link is showing the microphone it holds it, so the USB method is busy then; the key falls back to the other method.</p>
+    <p class="note" data-localize>This mutes the microphone itself through Maono Link — the device mute LED lights, the same as its own mute button.</p>
+    <p class="note" data-localize>Keep Maono Link running with your microphone panel open; otherwise the key cannot reach the mute.</p>
   </div>
 
   <script src="../../libs/js/constants.js"></script>

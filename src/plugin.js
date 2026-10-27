@@ -3,57 +3,38 @@ export const ACTION_UUID = `${PLUGIN_UUID}.toggle`;
 
 /** Indexes into the action's "States" in manifest.json */
 export const STATES = Object.freeze({ live: 0, muted: 1 });
-/** Shown instead of a state when nothing can mute the microphone */
+/** Shown instead of a state when the mute cannot be reached (Maono Link closed or its panel not open) */
 export const UNAVAILABLE_ICON = 'assets/icons/key-unavailable.png';
-
-// How the two mute methods are ordered for a key. "maono-link" drives Maono Link (same as its mute button),
-// "hid" talks to the microphone over USB directly. Default: prefer Maono Link, fall back to HID.
-export const PRIORITIES = Object.freeze({
-  'link-hid': ['maono-link', 'hid'],
-  'hid-link': ['hid', 'maono-link'],
-  link: ['maono-link'],
-  hid: ['hid'],
-});
-export const DEFAULT_PRIORITY = 'link-hid';
 
 // English texts double as localization keys (see the "Localization" section of <language>.json),
 // following the SDK convention, so an untranslated language still gets readable messages.
 export const MESSAGES = Object.freeze({
-  'maono-link-down': 'Maono Link is not running.',
-  'hid-unavailable': 'The microphone is not connected.',
-  unavailable: 'No way to mute the microphone is available.',
+  unavailable: 'Open Maono Link and show your microphone so the key can mute it.',
   failed: 'Could not change the mute of the microphone.',
 });
 
-const priorityOf = (param) => (typeof param?.priority === 'string' && PRIORITIES[param.priority] ? param.priority : DEFAULT_PRIORITY);
 const posOf = (param) => (Number.isInteger(param?.pos) ? param.pos : 0);
 
 /**
- * Wires the "Toggle Mute" action to a connection with Ulanzi Studio.
+ * Wires the "Toggle Mute" action to a connection with Ulanzi Studio. The mute goes through Maono Link's local
+ * IPC, so it is the real microphone mute (the device's LED lights). That needs Maono Link running with the
+ * microphone's panel open.
  *
  * @param {object} options
  * @param {import('./vendor/plugin-common-node/libs/ulanziApi.js').default} options.api
- * @param {import('./methods.js').Method[]} options.methods mute methods, each keyed by its name
+ * @param {import('./maono-link.js').MaonoLink} options.link
  */
-export function registerMuteAction({ api, methods }) {
-  const byName = new Map(methods.map((method) => [method.name, method]));
-  /** Keys showing this action, keyed by context: their settings and the view they last showed. */
+export function registerMuteAction({ api, link }) {
+  /** Keys showing this action, keyed by context: the device position they mute and the view they last showed. */
   const keys = new Map();
-  /** Context of the property inspector that asked for a report last; only one is open at a time. */
+  /** Context of the property inspector that is open, if any. */
   let inspector;
-
-  /** The methods a key uses, in the order it prefers them. */
-  const methodsFor = (key) => PRIORITIES[key.priority].map((name) => byName.get(name)).filter(Boolean);
-
-  /** The first method that can act for this key right now, or undefined. */
-  const activeMethod = (key) => methodsFor(key).find((method) => method.available);
 
   /** What a key shows: null (nothing new yet), "live", "muted", or "unavailable". */
   const viewOf = (key) => {
-    const method = activeMethod(key);
-    if (!method) return methodsFor(key).some((m) => m.pending) ? null : 'unavailable';
-    const muted = method.isMuted(key.pos);
-    if (muted === null) return null;
+    if (!link.state.available) return 'unavailable';
+    const muted = link.isMuted(key.pos);
+    if (muted === null) return null; // connected, but the mute has not been read back yet
     return muted ? 'muted' : 'live';
   };
 
@@ -67,65 +48,25 @@ export function registerMuteAction({ api, methods }) {
   };
 
   const describeTo = (context) => {
-    // The property inspector can ask before the key's "add" has been remembered
-    const key = keys.get(context) ?? { priority: DEFAULT_PRIORITY, pos: 0 };
-    const report = {
-      type: 'status',
-      priority: key.priority,
-      pos: key.pos,
-      methods: methods.map((method) => ({ name: method.name, available: method.available, muted: method.isMuted(key.pos) })),
-      devices: byName.get('maono-link')?.devices?.() ?? [],
-    };
-    api.sendToPropertyInspector(report, context);
+    const key = keys.get(context) ?? { pos: 0 };
+    api.sendToPropertyInspector(
+      { type: 'status', available: link.state.available, muted: link.isMuted(key.pos), pos: key.pos },
+      context,
+    );
   };
 
-  /** Keeps track of a key and its settings; every key needs the methods running. */
+  /** Keeps a key's settings and makes sure the connection to Maono Link is running. */
   const remember = ({ context, param }) => {
-    const key = keys.get(context) ?? { priority: DEFAULT_PRIORITY, pos: 0 };
-    if (param && typeof param === 'object') {
-      key.priority = priorityOf(param);
-      key.pos = posOf(param);
-    }
+    const key = keys.get(context) ?? { pos: 0 };
+    if (param && typeof param === 'object') key.pos = posOf(param);
     keys.set(context, key);
-    for (const method of methods) method.start();
+    link.start();
   };
 
-  /** @returns {Promise<keyof typeof MESSAGES | null>} what went wrong, if anything */
-  const toggle = async (key) => {
-    const ordered = methodsFor(key);
-    const method = ordered.find((m) => m.available);
-    if (!method) {
-      // Report the most specific reason the preferred method is out
-      const preferred = ordered[0]?.name;
-      if (preferred === 'maono-link') return 'maono-link-down';
-      if (preferred === 'hid') return 'hid-unavailable';
-      return 'unavailable';
-    }
-    const desired = !(method.isMuted(key.pos) ?? false);
-    try {
-      await method.setMute(key.pos, desired);
-      return null;
-    } catch (error) {
-      api.logMessage(`${method.name} could not mute pos ${key.pos}: ${error.message}`, 'error');
-      // Fall back to the next available method
-      const fallback = ordered.find((m) => m !== method && m.available);
-      if (fallback) {
-        try {
-          await fallback.setMute(key.pos, desired);
-          return null;
-        } catch (fallbackError) {
-          api.logMessage(`${fallback.name} could not mute pos ${key.pos}: ${fallbackError.message}`, 'error');
-        }
-      }
-      return 'failed';
-    }
-  };
-
-  const onChange = () => {
+  link.on('change', () => {
     for (const context of keys.keys()) render(context);
     if (inspector) describeTo(inspector);
-  };
-  for (const method of methods) method.on('change', onChange);
+  });
 
   api.onAdd((message) => {
     remember(message);
@@ -155,19 +96,27 @@ export function registerMuteAction({ api, methods }) {
   api.onRun(async (message) => {
     // run carries the saved settings too; prefer them in case an earlier event was missed
     remember(message);
-    const problem = await toggle(keys.get(message.context));
-    if (problem) {
+    const { pos } = keys.get(message.context);
+    if (!link.state.available) {
       api.showAlert(message.context);
-      api.toast(api.t(MESSAGES[problem]));
+      api.toast(api.t(MESSAGES.unavailable));
+      return;
+    }
+    try {
+      // The new state arrives as an "update"/ack, which updates every key
+      await link.toggleMute(pos);
+    } catch (error) {
+      api.logMessage(`Toggling the mute of pos ${pos} failed: ${error.message}`, 'error');
+      api.showAlert(message.context);
+      api.toast(api.t(MESSAGES.failed));
     }
   });
 
   api.onSendToPlugin(({ context, payload }) => {
     if (payload?.type !== 'inspect') return;
     inspector = context;
-    // The property inspector may open before any key event started the methods; make sure they are running so
-    // the status fills in. describeTo is resent from onChange as each method comes up.
-    for (const method of methods) method.start();
+    // The panel may open before any key event started the connection; make sure it is running
+    link.start();
     describeTo(context);
   });
 }

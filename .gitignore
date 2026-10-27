@@ -4,4 +4,3 @@ dist/
 *.log
 # Built by scripts/build.mjs
 com.ulanzi.maonomute.ulanziPlugin/plugin/app.js
-com.ulanzi.maonomute.ulanziPlugin/plugin/bin/

@@ -1,32 +1,21 @@
 {
   "Name": "Maono 마이크 음소거",
-  "Description": "Maono Link와 같은 방식으로 Maono USB 마이크를 키 하나로 음소거하거나 해제합니다. 마이크가 음소거되었는지 키에 표시됩니다.",
+  "Description": "Maono Link를 통해 Maono 마이크를 키 하나로 음소거하거나 해제합니다. 장치 LED가 켜지는 진짜 음소거입니다. 마이크가 음소거되었는지 키에 표시됩니다.",
   "Actions": [
     {
       "Name": "음소거 전환",
-      "Tooltip": "Maono 마이크의 음소거를 전환합니다. 키에 음소거 상태가 표시됩니다"
+      "Tooltip": "Maono 마이크의 음소거를 전환합니다(장치 LED 점등). 키에 음소거 상태가 표시됩니다"
     }
   ],
   "Localization": {
-    "Mute method": "음소거 방식",
-    "Maono Link first, then USB": "Maono Link 우선, 없으면 USB",
-    "USB first, then Maono Link": "USB 우선, 없으면 Maono Link",
-    "Maono Link only": "Maono Link만",
-    "USB (direct) only": "USB(직접)만",
     "Status": "상태",
-    "Maono Link": "Maono Link",
-    "USB (direct)": "USB(직접)",
-    "not running": "실행 중 아님",
-    "microphone not connected": "마이크 연결 안 됨",
-    "available": "사용 가능",
-    "Muted": "음소거됨",
-    "On": "켜짐",
     "Loading…": "불러오는 중…",
-    "Maono Link mutes exactly like its own mute button. USB (direct) talks to the microphone itself, so it works even when Maono Link is closed.": "Maono Link는 그 음소거 버튼과 똑같이 동작합니다. USB(직접)는 마이크 본체와 통신하므로 Maono Link를 닫아도 작동합니다.",
-    "While Maono Link is showing the microphone it holds it, so the USB method is busy then; the key falls back to the other method.": "Maono Link가 해당 마이크 화면을 표시하는 동안에는 마이크를 점유하므로 USB 방식이 사용 중이 되고, 키는 다른 방식으로 대체됩니다.",
-    "Maono Link is not running.": "Maono Link가 실행되고 있지 않습니다.",
-    "The microphone is not connected.": "마이크가 연결되어 있지 않습니다.",
-    "No way to mute the microphone is available.": "사용할 수 있는 음소거 방식이 없습니다.",
+    "On": "켜짐",
+    "Muted": "음소거됨",
+    "Maono Link is not running, or the microphone panel is not open.": "Maono Link가 실행되고 있지 않거나 마이크 화면이 열려 있지 않습니다.",
+    "This mutes the microphone itself through Maono Link — the device mute LED lights, the same as its own mute button.": "Maono Link를 통해 마이크 본체를 음소거합니다. 음소거 버튼과 마찬가지로 장치의 음소거 LED가 켜집니다.",
+    "Keep Maono Link running with your microphone panel open; otherwise the key cannot reach the mute.": "Maono Link를 실행하고 마이크 화면을 열어 두세요. 닫혀 있으면 키로 음소거를 조작할 수 없습니다.",
+    "Open Maono Link and show your microphone so the key can mute it.": "Maono Link를 실행하고 마이크 화면을 여세요. 그러면 키로 음소거할 수 있습니다.",
     "Could not change the mute of the microphone.": "마이크 음소거를 전환하지 못했습니다."
   }
 }

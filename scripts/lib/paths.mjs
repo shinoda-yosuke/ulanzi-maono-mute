@@ -6,9 +6,6 @@ export const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '
 export const PLUGIN_NAME = 'com.ulanzi.maonomute.ulanziPlugin';
 export const PLUGIN_DIR = path.join(ROOT, PLUGIN_NAME);
 export const DIST_DIR = path.join(ROOT, 'dist');
-export const HELPER_SOURCE = path.join(ROOT, 'native', 'micmute-helper.swift');
-/** Where the main service (plugin/app.js) looks for the helper */
-export const HELPER_BINARY = path.join(PLUGIN_DIR, 'plugin', 'bin', 'micmute-helper');
 
 /** True when the module at `metaUrl` is the script node was started with. */
 export function isMain(metaUrl) {

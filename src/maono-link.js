@@ -4,9 +4,11 @@ import { readdirSync, statSync } from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 
-// Maono Link's own mute is "type 8" of its local IPC. "pos" is the device position (0 is the active device).
-// We talk to that socket so the plugin mutes exactly the way Maono Link's mute button does.
-const MUTE_TYPE = 8;
+// Maono Link's microphone mute — the one that lights the device's mute LED — is "type 5" of its local IPC
+// (it maps to device register 0x207d). We send it through Maono Link's socket so the mute reaches the microphone
+// exactly the way its own mute button does, LED and all. "type 8" is only a signal mute (no LED), so we avoid it.
+// "pos" is the device position (0 is the active device).
+const MUTE_TYPE = 5;
 // Maono Link publishes a busy stream of type-9 updates (level meter); we only care about mute.
 
 export class MaonoLinkError extends Error {

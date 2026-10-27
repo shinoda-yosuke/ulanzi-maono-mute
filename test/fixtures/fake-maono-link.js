@@ -26,12 +26,12 @@ export async function startFakeMaonoLink(socketPath) {
         buffer = buffer.slice(index + 1);
         if (!line) continue;
         const message = JSON.parse(line);
-        if (message.cmd === 'get' && message.type === 8) {
-          socket.write(`${JSON.stringify({ event: 'reply', pos: message.pos, type: 8, value: muted ? 1 : 0 })}\n`);
-        } else if (message.cmd === 'set' && message.type === 8) {
+        if (message.cmd === 'get' && message.type === 5) {
+          socket.write(`${JSON.stringify({ event: 'reply', pos: message.pos, type: 5, value: muted ? 1 : 0 })}\n`);
+        } else if (message.cmd === 'set' && message.type === 5) {
           muted = message.value === 1;
-          broadcast({ event: 'update', pos: message.pos, type: 8, value: muted ? 1 : 0 });
-          socket.write(`${JSON.stringify({ event: 'ack', pos: message.pos, type: 8, seq: message.seq, current_value: muted ? 1 : 0 })}\n`);
+          broadcast({ event: 'update', pos: message.pos, type: 5, value: muted ? 1 : 0 });
+          socket.write(`${JSON.stringify({ event: 'ack', pos: message.pos, type: 5, seq: message.seq, current_value: muted ? 1 : 0 })}\n`);
         }
       }
     });
@@ -49,7 +49,7 @@ export async function startFakeMaonoLink(socketPath) {
     /** Plays another app muting the microphone. */
     setMuted(value) {
       muted = value;
-      broadcast({ event: 'update', pos: 0, type: 8, value: muted ? 1 : 0 });
+      broadcast({ event: 'update', pos: 0, type: 5, value: muted ? 1 : 0 });
     },
     get muted() {
       return muted;
