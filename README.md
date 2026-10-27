@@ -118,3 +118,10 @@ see [THIRD_PARTY_NOTICES.txt](com.ulanzi.maonomute.ulanziPlugin/THIRD_PARTY_NOTI
 
 This is a community plugin, not affiliated with Maono or Ulanzi. Maono is a trademark of its owner. The UUID
 (`com.ulanzi.ulanzistudio.maonomute`) follows the naming convention required by the SDK.
+
+### Disclaimer
+
+The HID path reaches the microphone over an undocumented protocol, worked out by observing Maono Link for
+interoperability; a Maono Link or firmware update could change it, and writing to the device always carries some
+risk. **Use this plugin at your own risk** — as the MIT license states, it is provided "as is", without warranty of
+any kind.
