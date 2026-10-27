@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="196" height="196" viewBox="0 0 196 196">
+  <!-- Nothing to mute (microphone missing or helper down): a grey microphone with a warning badge -->
+  <rect width="196" height="196" fill="#1C1C1E"/>
+  <g transform="translate(98 98) scale(4.8) translate(-12 -12.15)" stroke-linecap="round">
+    <rect x="8.6" y="2.4" width="6.8" height="11.6" rx="3.4" fill="#636366"/>
+    <path d="M5.4 10.9a6.6 6.6 0 0 0 13.2 0M12 17.5v3M8.4 20.9h7.2" fill="none" stroke="#636366" stroke-width="2"/>
+    <circle cx="18.6" cy="5" r="4.6" fill="#1C1C1E"/>
+    <circle cx="18.6" cy="5" r="3.6" fill="#FF9F0A"/>
+    <path d="M18.6 3.2v2.2" stroke="#1C1C1E" stroke-width="1.3"/>
+    <circle cx="18.6" cy="7.1" r="0.7" fill="#1C1C1E"/>
+  </g>
+</svg>

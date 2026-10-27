@@ -1,0 +1,47 @@
+{
+  "Author": "shinoda-yosuke",
+  "Name": "Maono Mic Mute",
+  "Description": "Mute and unmute a Maono microphone with a key press, through Maono Link — the real mute, with the device LED. The key shows whether the microphone is muted.",
+  "Icon": "assets/icons/plugin.png",
+  "Version": "1.0.0",
+  "Category": "Maono Mic Mute",
+  "CategoryIcon": "assets/icons/category.png",
+  "CodePath": "plugin/app.js",
+  "Type": "JavaScript",
+  "UUID": "com.ulanzi.ulanzistudio.maonomute",
+  "Actions": [
+    {
+      "Name": "Toggle Mute",
+      "Icon": "assets/icons/action.png",
+      "PropertyInspectorPath": "property-inspector/toggle/inspector.html",
+      "state": 0,
+      "States": [
+        {
+          "Name": "On",
+          "Image": "assets/icons/key-live.png"
+        },
+        {
+          "Name": "Muted",
+          "Image": "assets/icons/key-muted.png"
+        }
+      ],
+      "Tooltip": "Mute or unmute the Maono microphone; the key shows whether it is muted",
+      "UUID": "com.ulanzi.ulanzistudio.maonomute.toggle",
+      "SupportedInMultiActions": true,
+      "DisableAutomaticStates": true,
+      "Controllers": [
+        "Keypad"
+      ],
+      "Devices": []
+    }
+  ],
+  "OS": [
+    {
+      "Platform": "mac",
+      "MinimumVersion": "10.15"
+    }
+  ],
+  "Software": {
+    "MinVersion": "3.0.11"
+  }
+}

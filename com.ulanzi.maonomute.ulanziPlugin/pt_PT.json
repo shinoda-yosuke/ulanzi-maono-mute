@@ -1,0 +1,21 @@
+{
+  "Name": "Silenciar microfone Maono",
+  "Description": "Silencia e reativa um microfone Maono com uma tecla, através do Maono Link — o silêncio real, com o LED do dispositivo. A tecla mostra se o microfone está silenciado.",
+  "Actions": [
+    {
+      "Name": "Alternar silêncio",
+      "Tooltip": "Silencia ou reativa o microfone Maono (o LED do dispositivo acende); a tecla mostra o estado"
+    }
+  ],
+  "Localization": {
+    "Status": "Estado",
+    "Loading…": "A carregar…",
+    "On": "Ligado",
+    "Muted": "Silenciado",
+    "Maono Link is not running, or the microphone panel is not open.": "O Maono Link não está em execução, ou o painel do microfone não está aberto.",
+    "This mutes the microphone itself through Maono Link — the device mute LED lights, the same as its own mute button.": "Silencia o próprio microfone através do Maono Link. Tal como com o seu botão de silêncio, o LED de silêncio do dispositivo acende.",
+    "Keep Maono Link running with your microphone panel open; otherwise the key cannot reach the mute.": "Mantenha o Maono Link em execução com o painel do microfone aberto; caso contrário, a tecla não consegue alcançar o silêncio.",
+    "Open Maono Link and show your microphone so the key can mute it.": "Abra o Maono Link e mostre o seu microfone para que a tecla o possa silenciar.",
+    "Could not change the mute of the microphone.": "Não foi possível alterar o silêncio do microfone."
+  }
+}

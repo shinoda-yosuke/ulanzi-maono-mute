@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="256" height="256" viewBox="0 0 256 256">
+  <!-- A muted microphone on a 24-unit grid; a mask cuts a gap around the slash so any background shows through -->
+  <defs>
+    <linearGradient id="red" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#FF5B52"/>
+      <stop offset="1" stop-color="#D92A22"/>
+    </linearGradient>
+    <mask id="cut" maskUnits="userSpaceOnUse" x="0" y="0" width="24" height="24">
+      <rect width="24" height="24" fill="#FFFFFF"/>
+      <path d="M4.6 3.4L19.4 20.6" stroke="#000000" stroke-width="5" stroke-linecap="round"/>
+    </mask>
+  </defs>
+  <rect x="8" y="8" width="240" height="240" rx="56" fill="url(#red)"/>
+  <g transform="translate(128 128) scale(7.4) translate(-12 -12.15)" stroke-linecap="round">
+    <g mask="url(#cut)">
+      <rect x="8.6" y="2.4" width="6.8" height="11.6" rx="3.4" fill="#FFFFFF"/>
+      <path d="M5.4 10.9a6.6 6.6 0 0 0 13.2 0M12 17.5v3M8.4 20.9h7.2" fill="none" stroke="#FFFFFF" stroke-width="2"/>
+    </g>
+    <path d="M4.6 3.4L19.4 20.6" stroke="#FFFFFF" stroke-width="2"/>
+  </g>
+</svg>

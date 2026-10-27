@@ -1,0 +1,21 @@
+{
+  "Name": "Maono-Mikrofon stummschalten",
+  "Description": "Schaltet ein Maono-Mikrofon per Tastendruck über Maono Link stumm und wieder ein — die echte Stummschaltung mit Geräte-LED. Die Taste zeigt an, ob das Mikrofon stumm ist.",
+  "Actions": [
+    {
+      "Name": "Stummschaltung umschalten",
+      "Tooltip": "Schaltet das Maono-Mikrofon stumm oder wieder ein (die Geräte-LED leuchtet); die Taste zeigt den Status"
+    }
+  ],
+  "Localization": {
+    "Status": "Status",
+    "Loading…": "Wird geladen …",
+    "On": "An",
+    "Muted": "Stumm",
+    "Maono Link is not running, or the microphone panel is not open.": "Maono Link läuft nicht, oder das Fenster des Mikrofons ist nicht geöffnet.",
+    "This mutes the microphone itself through Maono Link — the device mute LED lights, the same as its own mute button.": "Schaltet das Mikrofon selbst über Maono Link stumm. Wie bei dessen Stummschalttaste leuchtet die Stumm-LED des Geräts.",
+    "Keep Maono Link running with your microphone panel open; otherwise the key cannot reach the mute.": "Lass Maono Link mit geöffnetem Mikrofon-Fenster laufen; sonst erreicht die Taste die Stummschaltung nicht.",
+    "Open Maono Link and show your microphone so the key can mute it.": "Starte Maono Link und öffne dein Mikrofon, damit die Taste es stummschalten kann.",
+    "Could not change the mute of the microphone.": "Die Stummschaltung des Mikrofons konnte nicht geändert werden."
+  }
+}

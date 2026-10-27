@@ -1,0 +1,21 @@
+{
+  "Name": "Maono 마이크 음소거",
+  "Description": "Maono Link를 통해 Maono 마이크를 키 하나로 음소거하거나 해제합니다. 장치 LED가 켜지는 진짜 음소거입니다. 마이크가 음소거되었는지 키에 표시됩니다.",
+  "Actions": [
+    {
+      "Name": "음소거 전환",
+      "Tooltip": "Maono 마이크의 음소거를 전환합니다(장치 LED 점등). 키에 음소거 상태가 표시됩니다"
+    }
+  ],
+  "Localization": {
+    "Status": "상태",
+    "Loading…": "불러오는 중…",
+    "On": "켜짐",
+    "Muted": "음소거됨",
+    "Maono Link is not running, or the microphone panel is not open.": "Maono Link가 실행되고 있지 않거나 마이크 화면이 열려 있지 않습니다.",
+    "This mutes the microphone itself through Maono Link — the device mute LED lights, the same as its own mute button.": "Maono Link를 통해 마이크 본체를 음소거합니다. 음소거 버튼과 마찬가지로 장치의 음소거 LED가 켜집니다.",
+    "Keep Maono Link running with your microphone panel open; otherwise the key cannot reach the mute.": "Maono Link를 실행하고 마이크 화면을 열어 두세요. 닫혀 있으면 키로 음소거를 조작할 수 없습니다.",
+    "Open Maono Link and show your microphone so the key can mute it.": "Maono Link를 실행하고 마이크 화면을 여세요. 그러면 키로 음소거할 수 있습니다.",
+    "Could not change the mute of the microphone.": "마이크 음소거를 전환하지 못했습니다."
+  }
+}
