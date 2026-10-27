@@ -10,7 +10,7 @@ const $UD = new UlanziApi();
 const log = (message, level) => $UD.logMessage(message, level);
 
 // The real microphone mute, the one that lights the device LED: through Maono Link's local IPC when its
-// microphone panel is open, or straight to the receiver over HID (via the maono-hid helper) when it is not.
+// panel shows the microphone, or straight to the receiver over HID (via the maono-hid helper) when it does not.
 const link = new MaonoLink({ log });
 const hid = new HidMute({
   // scripts/build.mjs builds the helper next to app.js; the tests point MAONO_MUTE_HELPER at a fake one
@@ -19,7 +19,7 @@ const hid = new HidMute({
 });
 const controller = new MuteController({ link, hid });
 
-registerMuteAction({ api: $UD, link: controller });
+registerMuteAction({ api: $UD, controller });
 
 // EventEmitter throws on an "error" event nobody listens to
 $UD.onError((error) => console.error(error));

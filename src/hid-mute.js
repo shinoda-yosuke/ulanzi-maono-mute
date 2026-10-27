@@ -3,7 +3,7 @@ import { EventEmitter } from 'node:events';
 import { accessSync, chmodSync, constants } from 'node:fs';
 
 export class HidError extends Error {
-  /** @param {string} code "no-device" | "busy" | "failed" | "bad-reply" | "spawn" */
+  /** @param {string} code "not-found" | "ambiguous" | "busy" | "failed" | "bad-reply" | "spawn" */
   constructor(message, code) {
     super(message);
     this.name = 'HidError';
@@ -12,22 +12,43 @@ export class HidError extends Error {
 }
 
 /**
+ * @typedef {object} Receiver a Maono receiver the helper found
+ * @property {string} id "sn:<USB serial number>", or "loc:<USB location>" for one that reports no serial
+ * @property {string} product the name it reports, e.g. "Maono Wireless Mic RX"
+ * @property {string} serial its USB serial number, or "" if it reports none
+ * @property {string} location the USB location (port) it is plugged into, in hex
+ * @property {boolean} busy another app holds it exclusively (Maono Link does while its panel shows it)
+ * @property {boolean | null} muted as last read or set; null if unknown
+ */
+
+/** One entry of the helper's "status", with only the fields the plugin relies on; null if it has no id. */
+function toReceiver(entry) {
+  if (typeof entry?.id !== 'string' || !entry.id) return null;
+  const text = (value) => (typeof value === 'string' ? value : '');
+  return {
+    id: entry.id,
+    product: text(entry.product),
+    serial: text(entry.serial),
+    location: text(entry.location),
+    busy: entry.busy === true,
+    muted: typeof entry.muted === 'boolean' ? entry.muted : null,
+  };
+}
+
+/**
  * Drives the microphone's real mute (the one that lights its LED) over HID, without Maono Link, by running
- * the maono-hid helper once per action: it opens the receiver, wakes it, reads or writes the mute register,
+ * the maono-hid helper once per action: it opens a receiver, wakes it, reads or writes the mute register,
  * then closes. The mute latches, so nothing is kept resident — and the device is free for Maono Link whenever
- * it wants it. Emits "change" when availability or the mute (as last probed or set) changes.
- *
- * The plugin addresses "pos" (a Maono Link device position), but the helper targets the single Maono HID
- * microphone, so pos is ignored here.
+ * it wants it. Several receivers can be connected; each is addressed by its id. Emits "change" when the
+ * receivers or their mutes (as last probed or set) change.
  */
 export class HidMute extends EventEmitter {
   #command;
   #log;
   #run;
   #timeout;
-  #available = false;
-  /** @type {boolean | null} */
-  #muted = null;
+  /** @type {Receiver[]} */
+  #receivers = [];
 
   /**
    * @param {object} options
@@ -44,45 +65,45 @@ export class HidMute extends EventEmitter {
     this.#run = run ?? ((args) => this.#spawn(args));
   }
 
-  /** Whether a Maono microphone is present and drivable over HID right now (false while Maono Link holds it). */
-  get available() {
-    return this.#available;
+  /** The receivers found by the last probe, in a stable order (by USB location). */
+  get receivers() {
+    return this.#receivers;
   }
 
-  /** The mute the microphone was last probed or set to, or null if unknown. pos is ignored (single device). */
-  isMuted() {
-    return this.#muted;
-  }
-
-  /** Reads availability and the current mute from the device; updates state and emits change. */
+  /** Lists the connected receivers and reads their mutes; updates state and emits change. */
   async probe() {
     try {
-      const reply = await this.#call(['get']);
-      this.#update(reply.available === true, reply.available === true ? reply.muted ?? null : null);
+      const reply = await this.#call(['status']);
+      if (!Array.isArray(reply.devices)) {
+        throw new HidError(`maono-hid status has no device list: ${JSON.stringify(reply).slice(0, 200)}`, 'bad-reply');
+      }
+      this.#update(reply.devices.map(toReceiver).filter(Boolean));
     } catch (error) {
-      this.#log(`maono-hid get failed: ${error.message}`, 'warn');
-      this.#update(false, null);
+      this.#log(`maono-hid status failed: ${error.message}`, 'warn');
+      this.#update([]);
     }
-    return { available: this.#available, muted: this.#muted };
+    return this.#receivers;
   }
 
   /**
-   * Mutes or unmutes the microphone over HID.
-   * @param {number} _pos ignored; the helper targets the single Maono microphone
+   * Mutes or unmutes one receiver over HID.
+   * @param {string} id the receiver's id
    * @param {boolean} muted
    * @returns {Promise<boolean>} the resulting mute
    */
-  async setMute(_pos, muted) {
-    const reply = await this.#call(['set', muted ? '1' : '0']);
-    if (!reply.ok) throw new HidError(`Could not set the mute over HID: ${reply.reason ?? 'unknown'}`, reply.reason ?? 'failed');
-    this.#update(true, reply.muted === true);
-    return this.#muted;
+  async setMute(id, muted) {
+    const reply = await this.#call(['set', muted ? '1' : '0', id]);
+    if (!reply.ok) {
+      throw new HidError(`Could not set the mute of ${id} over HID: ${reply.reason ?? 'unknown'}`, reply.reason ?? 'failed');
+    }
+    const result = reply.muted === true;
+    this.#update(this.#receivers.map((receiver) => (receiver.id === id ? { ...receiver, busy: false, muted: result } : receiver)));
+    return result;
   }
 
-  #update(available, muted) {
-    if (available === this.#available && muted === this.#muted) return;
-    this.#available = available;
-    this.#muted = muted;
+  #update(receivers) {
+    if (JSON.stringify(receivers) === JSON.stringify(this.#receivers)) return;
+    this.#receivers = receivers;
     this.emit('change');
   }
 

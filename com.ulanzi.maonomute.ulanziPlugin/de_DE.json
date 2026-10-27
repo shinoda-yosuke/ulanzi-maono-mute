@@ -8,6 +8,9 @@
     }
   ],
   "Localization": {
+    "Microphone": "Mikrofon",
+    "Automatic": "Automatisch",
+    "Not connected": "Nicht verbunden",
     "Status": "Status",
     "Loading…": "Wird geladen …",
     "On": "An",
@@ -16,6 +19,9 @@
     "This is the real microphone mute — the device mute LED lights, the same as its own mute button.": "Das ist die echte Mikrofon-Stummschaltung — wie bei dessen Stummschalttaste leuchtet die Stumm-LED des Geräts.",
     "It works on its own; and through Maono Link when its microphone panel is open.": "Funktioniert eigenständig; und über Maono Link, wenn dessen Mikrofon-Fenster geöffnet ist.",
     "Connect your Maono microphone, or open Maono Link, so the key can mute it.": "Schließe dein Maono-Mikrofon an oder öffne Maono Link, damit die Taste es stummschalten kann.",
-    "Could not change the mute of the microphone.": "Die Stummschaltung des Mikrofons konnte nicht geändert werden."
+    "Could not change the mute of the microphone.": "Die Stummschaltung des Mikrofons konnte nicht geändert werden.",
+    "Several Maono microphones are connected. Choose which one this key mutes.": "Mehrere Maono-Mikrofone sind angeschlossen. Wähle aus, welches diese Taste stummschaltet.",
+    "The microphone chosen for this key is not connected.": "Das für diese Taste gewählte Mikrofon ist nicht angeschlossen.",
+    "Maono Link is using the microphone. Open its microphone panel, or quit Maono Link.": "Maono Link verwendet das Mikrofon. Öffne dort das Mikrofon-Fenster oder beende Maono Link."
   }
 }

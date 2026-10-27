@@ -3,39 +3,54 @@ export const ACTION_UUID = `${PLUGIN_UUID}.toggle`;
 
 /** Indexes into the action's "States" in manifest.json */
 export const STATES = Object.freeze({ live: 0, muted: 1 });
-/** Shown instead of a state when the mute cannot be reached (microphone not connected, nor Maono Link open) */
+/** Shown instead of a state when the key cannot reach the mute (e.g. microphone not connected, nor Maono Link open) */
 export const UNAVAILABLE_ICON = 'assets/icons/key-unavailable.png';
 
 // English texts double as localization keys (see the "Localization" section of <language>.json),
 // following the SDK convention, so an untranslated language still gets readable messages.
 export const MESSAGES = Object.freeze({
   unavailable: 'Connect your Maono microphone, or open Maono Link, so the key can mute it.',
+  choose: 'Several Maono microphones are connected. Choose which one this key mutes.',
+  notFound: 'The microphone chosen for this key is not connected.',
+  busy: 'Maono Link is using the microphone. Open its microphone panel, or quit Maono Link.',
   failed: 'Could not change the mute of the microphone.',
 });
 
+/** What to tell the user when a key cannot mute, by the reason the controller gives. */
+const UNAVAILABLE_MESSAGES = Object.freeze({
+  'no-device': MESSAGES.unavailable,
+  choose: MESSAGES.choose,
+  'not-found': MESSAGES.notFound,
+  busy: MESSAGES.busy,
+});
+
 const posOf = (param) => (Number.isInteger(param?.pos) ? param.pos : 0);
+/** The receiver chosen in a key's settings, or null to follow the only one connected. */
+const deviceOf = (param) => (typeof param?.device === 'string' && param.device ? param.device : null);
 
 /**
  * Wires the "Toggle Mute" action to a connection with Ulanzi Studio. The mute is the real microphone mute
- * (the device's LED lights): through Maono Link's IPC when its panel is open, or straight to the receiver over
- * HID otherwise. Both are presented by the one controller passed as `link`.
+ * (the device's LED lights): through Maono Link's IPC when its panel shows the microphone, or straight to the
+ * receiver over HID otherwise. Each key mutes the receiver chosen in its settings, or the only one connected.
  *
  * @param {object} options
  * @param {import('./vendor/plugin-common-node/libs/ulanziApi.js').default} options.api
- * @param {import('./mute-controller.js').MuteController} options.link the mute controller (MaonoLink-shaped)
+ * @param {import('./mute-controller.js').MuteController} options.controller
  */
-export function registerMuteAction({ api, link }) {
-  /** Keys showing this action, keyed by context: the device position they mute and the view they last showed. */
+export function registerMuteAction({ api, controller }) {
+  /** Keys showing this action, keyed by context: the microphone they mute (a Target) and the view they last showed. */
   const keys = new Map();
   /** Context of the property inspector that is open, if any. */
   let inspector;
 
+  const targetOf = (context) => keys.get(context) ?? { device: null, pos: 0 };
+
   /** What a key shows: null (nothing new yet), "live", "muted", or "unavailable". */
   const viewOf = (key) => {
-    if (!link.state.available) return 'unavailable';
-    const muted = link.isMuted(key.pos);
-    if (muted === null) return null; // connected, but the mute has not been read back yet
-    return muted ? 'muted' : 'live';
+    const route = controller.route(key);
+    if (!route.method) return 'unavailable';
+    if (route.muted === null) return null; // reachable, but the mute has not been read back yet
+    return route.muted ? 'muted' : 'live';
   };
 
   const render = (context, { force = false } = {}) => {
@@ -48,22 +63,31 @@ export function registerMuteAction({ api, link }) {
   };
 
   const describeTo = (context) => {
-    const key = keys.get(context) ?? { pos: 0 };
+    const route = controller.route(targetOf(context));
     api.sendToPropertyInspector(
-      { type: 'status', available: link.state.available, muted: link.isMuted(key.pos), pos: key.pos },
+      {
+        type: 'status',
+        available: route.method !== null,
+        muted: route.muted,
+        reason: route.reason,
+        devices: controller.receivers.map(({ id, product, serial, location }) => ({ id, product, serial, location })),
+      },
       context,
     );
   };
 
-  /** Keeps a key's settings and makes sure the connection to Maono Link is running. */
+  /** Keeps a key's settings and makes sure the controller is running. */
   const remember = ({ context, param }) => {
-    const key = keys.get(context) ?? { pos: 0 };
-    if (param && typeof param === 'object') key.pos = posOf(param);
+    const key = keys.get(context) ?? { device: null, pos: 0 };
+    if (param && typeof param === 'object') {
+      key.pos = posOf(param);
+      key.device = deviceOf(param);
+    }
     keys.set(context, key);
-    link.start();
+    controller.start();
   };
 
-  link.on('change', () => {
+  controller.on('change', () => {
     for (const context of keys.keys()) render(context);
     if (inspector) describeTo(inspector);
   });
@@ -96,17 +120,18 @@ export function registerMuteAction({ api, link }) {
   api.onRun(async (message) => {
     // run carries the saved settings too; prefer them in case an earlier event was missed
     remember(message);
-    const { pos } = keys.get(message.context);
-    if (!link.state.available) {
+    const key = keys.get(message.context);
+    const { method, reason } = controller.route(key);
+    if (!method) {
       api.showAlert(message.context);
-      api.toast(api.t(MESSAGES.unavailable));
+      api.toast(api.t(UNAVAILABLE_MESSAGES[reason] ?? MESSAGES.unavailable));
       return;
     }
     try {
-      // The new state arrives as an "update"/ack, which updates every key
-      await link.toggleMute(pos);
+      // The new state comes back as a change of the controller, which updates every key
+      await controller.toggleMute(key);
     } catch (error) {
-      api.logMessage(`Toggling the mute of pos ${pos} failed: ${error.message}`, 'error');
+      api.logMessage(`Toggling the mute of ${key.device ?? 'the microphone'} (pos ${key.pos}) failed: ${error.message}`, 'error');
       api.showAlert(message.context);
       api.toast(api.t(MESSAGES.failed));
     }
@@ -115,8 +140,8 @@ export function registerMuteAction({ api, link }) {
   api.onSendToPlugin(({ context, payload }) => {
     if (payload?.type !== 'inspect') return;
     inspector = context;
-    // The panel may open before any key event started the connection; make sure it is running
-    link.start();
+    // The panel may open before any key event started the controller; make sure it is running
+    controller.start();
     describeTo(context);
   });
 }
