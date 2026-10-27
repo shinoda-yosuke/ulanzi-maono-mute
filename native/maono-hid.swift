@@ -1,8 +1,14 @@
 // maono-hid — a short-lived helper that mutes a Maono microphone over HID, the real mute that lights the
 // device's LED, without Maono Link. It prints one JSON line and exits; the plugin spawns it per action.
 //
-//   maono-hid get        -> {"available":true,"muted":false} | {"available":false,"reason":"..."}
-//   maono-hid set 0|1    -> {"ok":true,"muted":true}         | {"ok":false,"reason":"..."}
+//   maono-hid status        -> {"devices":[{"id":"sn:MCT250728274","product":"Maono Wireless Mic RX",
+//                               "serial":"MCT250728274","location":"02132000","muted":false}]}
+//   maono-hid set 0|1 <id>  -> {"ok":true,"muted":true} | {"ok":false,"reason":"not-found|ambiguous|busy|failed"}
+//
+// Several receivers can be connected at once, so each is named by an id: "sn:<USB serial number>", or, for one
+// that reports no serial, "loc:<USB location>" (the port it is plugged into). "status" lists every receiver with
+// its mute; one that another app holds exclusively — Maono Link does while its panel shows that microphone — is
+// listed with "busy":true instead.
 //
 // How it works (found by observing Maono Link, see README): the receiver ignores control writes until it is
 // "woken" by a single control-mode write to register 0x000b (value 3). After that kick, a write to the mute
@@ -12,7 +18,8 @@
 import IOKit.hid
 import Foundation
 
-let VENDOR = 0x352F            // Maono Wireless Mic RX
+let VENDOR = 0x352F            // Shenzhen Maono Technology
+let PRODUCT = 0x040E           // Maono Wireless Mic RX, the PD200W's receiver: the only model this was verified on
 let USAGE_PAGE = 0x0C          // the consumer-control interface Maono Link drives
 let MUTE_REG: UInt16 = 0x207d
 
@@ -38,66 +45,119 @@ func emit(_ obj: [String: Any]) {
     FileHandle.standardOutput.write(Data("\n".utf8))
 }
 
+func property<T>(_ device: IOHIDDevice, _ key: String) -> T? {
+    IOHIDDeviceGetProperty(device, key as CFString) as? T
+}
+
+/// A connected receiver, as the system lists it (listing does not open it).
+struct Receiver {
+    let device: IOHIDDevice
+    let product: String
+    let serial: String
+    let location: Int
+
+    var locationHex: String { String(format: "%08x", location) }
+    var id: String { serial.isEmpty ? "loc:\(locationHex)" : "sn:\(serial)" }
+}
+
+// Lives for the whole run: it owns the device references it lists
+let manager = IOHIDManagerCreate(kCFAllocatorDefault, IOOptionBits(kIOHIDOptionsTypeNone))
+
+/// Every connected receiver, ordered by USB location so the order is stable from run to run.
+func receivers() -> [Receiver] {
+    IOHIDManagerSetDeviceMatching(manager, [
+        kIOHIDVendorIDKey: VENDOR, kIOHIDProductIDKey: PRODUCT, kIOHIDPrimaryUsagePageKey: USAGE_PAGE,
+    ] as CFDictionary)
+    let devices = (IOHIDManagerCopyDevices(manager) as? Set<IOHIDDevice>) ?? []
+    return devices.map { device in
+        Receiver(
+            device: device,
+            product: property(device, kIOHIDProductKey) ?? "Maono Wireless Mic RX",
+            serial: (property(device, kIOHIDSerialNumberKey) ?? "").trimmingCharacters(in: .whitespaces),
+            location: property(device, kIOHIDLocationIDKey) ?? 0
+        )
+    }.sorted { $0.location < $1.location }
+}
+
+/// One receiver, opened and woken. Replies to reads arrive as input reports while the run loop runs.
+final class Session {
+    let device: IOHIDDevice
+    /// The mute read back from the receiver, once its reply has arrived
+    var muted: Bool?
+    private let buffer = UnsafeMutablePointer<UInt8>.allocate(capacity: 64)
+
+    /// nil when the receiver cannot be opened and woken: another app (Maono Link) holds it exclusively.
+    init?(_ device: IOHIDDevice) {
+        self.device = device
+        guard IOHIDDeviceOpen(device, IOOptionBits(kIOHIDOptionsTypeNone)) == kIOReturnSuccess else { return nil }
+        IOHIDDeviceRegisterInputReportCallback(device, buffer, 64, { context, _, _, _, _, rpt, len in
+            // A reply to a read is a 0x0b frame carrying the register and its value
+            guard let context, len > 8, rpt[1] == 0x0b else { return }
+            guard (UInt16(rpt[5]) | (UInt16(rpt[6]) << 8)) == MUTE_REG else { return }
+            Unmanaged<Session>.fromOpaque(context).takeUnretainedValue().muted =
+                (UInt16(rpt[7]) | (UInt16(rpt[8]) << 8)) == 1
+        }, Unmanaged.passUnretained(self).toOpaque())
+        IOHIDDeviceScheduleWithRunLoop(device, CFRunLoopGetCurrent(), CFRunLoopMode.defaultMode.rawValue)
+        // If even the kick cannot be written, the device is not really ours (treat it as busy)
+        guard send(KICK_HEX) else { close(); return nil }
+    }
+
+    deinit { buffer.deallocate() }
+
+    func send(_ hex: String) -> Bool {
+        let bytes = report(hex)
+        let result = bytes.withUnsafeBufferPointer {
+            IOHIDDeviceSetReport(device, kIOHIDReportTypeOutput, 0, $0.baseAddress!, bytes.count)
+        }
+        CFRunLoopRunInMode(.defaultMode, 0.06, false)
+        return result == kIOReturnSuccess
+    }
+
+    /// Reads 0x207d back; nil if the receiver does not answer in time.
+    func readMute() -> Bool? {
+        guard send(READ_HEX) else { return nil }
+        let deadline = Date().addingTimeInterval(0.4)
+        while muted == nil && Date() < deadline { CFRunLoopRunInMode(.defaultMode, 0.02, false) }
+        return muted
+    }
+
+    func close() {
+        IOHIDDeviceUnscheduleFromRunLoop(device, CFRunLoopGetCurrent(), CFRunLoopMode.defaultMode.rawValue)
+        IOHIDDeviceClose(device, IOOptionBits(kIOHIDOptionsTypeNone))
+    }
+}
+
 let args = CommandLine.arguments
-guard args.count >= 2 else { emit(["ok": false, "reason": "bad-request"]); exit(64) }
-let cmd = args[1]
-let setValue: Int? = cmd == "set" ? (args.count >= 3 ? Int(args[2]) : nil) : nil
-if cmd == "set" && setValue == nil { emit(["ok": false, "reason": "bad-request"]); exit(64) }
-
-// Open the receiver. A failure here means Maono Link is holding it exclusively, or it is not connected.
-let mgr = IOHIDManagerCreate(kCFAllocatorDefault, 0)
-IOHIDManagerSetDeviceMatching(mgr, [kIOHIDVendorIDKey: VENDOR] as CFDictionary)
-IOHIDManagerScheduleWithRunLoop(mgr, CFRunLoopGetCurrent(), CFRunLoopMode.defaultMode.rawValue)
-let opened = IOHIDManagerOpen(mgr, 0) == kIOReturnSuccess
-let device = (IOHIDManagerCopyDevices(mgr) as? Set<IOHIDDevice>)?.first {
-    (IOHIDDeviceGetProperty($0, kIOHIDPrimaryUsagePageKey as CFString) as? Int) == USAGE_PAGE
-}
-guard opened, let dev = device else {
-    let reason = device == nil && opened ? "no-device" : "busy"
-    if cmd == "get" { emit(["available": false, "reason": reason]) } else { emit(["ok": false, "reason": reason]) }
-    exit(0)
-}
-
-func send(_ bytes: [UInt8]) -> Bool {
-    let r = bytes.withUnsafeBufferPointer {
-        IOHIDDeviceSetReport(dev, kIOHIDReportTypeOutput, 0, $0.baseAddress!, bytes.count)
+switch args.count >= 2 ? args[1] : "" {
+case "status":
+    let devices: [[String: Any]] = receivers().map { receiver in
+        var entry: [String: Any] = [
+            "id": receiver.id, "product": receiver.product, "serial": receiver.serial, "location": receiver.locationHex,
+        ]
+        if let session = Session(receiver.device) {
+            if let muted = session.readMute() { entry["muted"] = muted } else { entry["muted"] = NSNull() }
+            session.close()
+        } else {
+            entry["busy"] = true
+        }
+        return entry
     }
-    CFRunLoopRunInMode(.defaultMode, 0.06, false)
-    return r == kIOReturnSuccess
-}
+    emit(["devices": devices])
 
-// Wake the receiver. If even the kick cannot be written, the device is not really ours (treat as busy).
-guard send(report(KICK_HEX)) else {
-    if cmd == "get" { emit(["available": false, "reason": "busy"]) } else { emit(["ok": false, "reason": "busy"]) }
-    exit(0)
-}
-
-if cmd == "set" {
-    let ok = send(report(setValue == 0 ? UNMUTE_HEX : MUTE_HEX))
+case "set":
+    guard args.count >= 4, let value = Int(args[2]), value == 0 || value == 1 else {
+        emit(["ok": false, "reason": "bad-request"]); exit(64)
+    }
+    // Never guess: with no receiver of that id, or several reporting the same serial, leave the mute alone
+    let matches = receivers().filter { $0.id == args[3] }
+    guard matches.count == 1 else { emit(["ok": false, "reason": matches.isEmpty ? "not-found" : "ambiguous"]); exit(0) }
+    guard let session = Session(matches[0].device) else { emit(["ok": false, "reason": "busy"]); exit(0) }
+    let ok = session.send(value == 1 ? MUTE_HEX : UNMUTE_HEX)
     CFRunLoopRunInMode(.defaultMode, 0.2, false) // let it settle before we close
-    emit(ok ? ["ok": true, "muted": setValue == 1] : ["ok": false, "reason": "failed"])
-    exit(0)
-}
+    session.close()
+    emit(ok ? ["ok": true, "muted": value == 1] : ["ok": false, "reason": "failed"])
 
-if cmd == "get" {
-    // Read 0x207d back; the reply arrives as an input report (0x0b frame with the register and value).
-    var muted: Bool? = nil
-    final class Box { var v: Bool? = nil }
-    let box = Box()
-    let buf = UnsafeMutablePointer<UInt8>.allocate(capacity: 64)
-    let cb: IOHIDReportCallback = { ctx, _, _, _, _, rpt, len in
-        guard len > 8, rpt[1] == 0x0b else { return }
-        let reg = UInt16(rpt[5]) | (UInt16(rpt[6]) << 8)
-        guard reg == MUTE_REG else { return }
-        Unmanaged<Box>.fromOpaque(ctx!).takeUnretainedValue().v = (UInt16(rpt[7]) | (UInt16(rpt[8]) << 8)) == 1
-    }
-    IOHIDDeviceRegisterInputReportCallback(dev, buf, 64, cb, Unmanaged.passUnretained(box).toOpaque())
-    _ = send(report(READ_HEX))
-    CFRunLoopRunInMode(.defaultMode, 0.4, false)
-    muted = box.v
-    if let m = muted { emit(["available": true, "muted": m]) } else { emit(["available": true, "muted": NSNull()]) }
-    exit(0)
+default:
+    emit(["ok": false, "reason": "bad-request"])
+    exit(64)
 }
-
-emit(["ok": false, "reason": "bad-request"])
-exit(64)

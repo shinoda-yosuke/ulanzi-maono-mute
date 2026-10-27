@@ -8,14 +8,18 @@
     }
   ],
   "Localization": {
+    "Microphone": "Microphone",
+    "Automatic": "Automatic",
+    "Not connected": "Not connected",
     "Status": "Status",
     "Loading…": "Loading…",
     "On": "On",
     "Muted": "Muted",
     "The microphone is not connected, and Maono Link is not open.": "The microphone is not connected, and Maono Link is not open.",
-    "This is the real microphone mute — the device mute LED lights, the same as its own mute button.": "This is the real microphone mute — the device mute LED lights, the same as its own mute button.",
-    "It works on its own; and through Maono Link when its microphone panel is open.": "It works on its own; and through Maono Link when its microphone panel is open.",
     "Connect your Maono microphone, or open Maono Link, so the key can mute it.": "Connect your Maono microphone, or open Maono Link, so the key can mute it.",
-    "Could not change the mute of the microphone.": "Could not change the mute of the microphone."
+    "Could not change the mute of the microphone.": "Could not change the mute of the microphone.",
+    "Several Maono microphones are connected. Choose which one this key mutes.": "Several Maono microphones are connected. Choose which one this key mutes.",
+    "The microphone chosen for this key is not connected.": "The microphone chosen for this key is not connected.",
+    "Maono Link is using the microphone. Open its microphone panel, or quit Maono Link.": "Maono Link is using the microphone. Open its microphone panel, or quit Maono Link."
   }
 }

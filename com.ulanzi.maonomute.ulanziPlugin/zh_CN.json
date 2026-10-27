@@ -8,14 +8,18 @@
     }
   ],
   "Localization": {
+    "Microphone": "麦克风",
+    "Automatic": "自动",
+    "Not connected": "未连接",
     "Status": "状态",
     "Loading…": "加载中…",
     "On": "开启",
     "Muted": "已静音",
     "The microphone is not connected, and Maono Link is not open.": "麦克风未连接，且 Maono Link 也未打开。",
-    "This is the real microphone mute — the device mute LED lights, the same as its own mute button.": "这是真正的麦克风静音——与其静音按钮一样，设备的静音 LED 会点亮。",
-    "It works on its own; and through Maono Link when its microphone panel is open.": "它可独立工作；当麦克风界面打开时，也可通过 Maono Link 工作。",
     "Connect your Maono microphone, or open Maono Link, so the key can mute it.": "请连接 Maono 麦克风，或打开 Maono Link，这样按键才能将其静音。",
-    "Could not change the mute of the microphone.": "无法切换麦克风的静音状态。"
+    "Could not change the mute of the microphone.": "无法切换麦克风的静音状态。",
+    "Several Maono microphones are connected. Choose which one this key mutes.": "已连接多个 Maono 麦克风。请选择此按键要静音的麦克风。",
+    "The microphone chosen for this key is not connected.": "为此按键选择的麦克风未连接。",
+    "Maono Link is using the microphone. Open its microphone panel, or quit Maono Link.": "Maono Link 正在使用该麦克风。请打开其麦克风界面，或退出 Maono Link。"
   }
 }

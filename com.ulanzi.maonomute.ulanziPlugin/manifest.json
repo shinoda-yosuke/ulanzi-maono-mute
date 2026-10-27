@@ -3,7 +3,7 @@
   "Name": "Maono Mic Mute",
   "Description": "Mute and unmute a Maono microphone with a key press — the real mute, with the device LED. Works on its own, or through Maono Link. The key shows whether the microphone is muted.",
   "Icon": "assets/icons/plugin.png",
-  "Version": "1.1.0",
+  "Version": "1.2.0",
   "Category": "Maono Mic Mute",
   "CategoryIcon": "assets/icons/category.png",
   "CodePath": "plugin/app.js",

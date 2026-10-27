@@ -1,6 +1,6 @@
 {
   "name": "ulanzi-maono-mute",
-  "version": "1.1.0",
+  "version": "1.2.0",
   "private": true,
   "description": "Ulanzi Studio (UlanziDeck) plugin that toggles the mute of a Maono microphone with a key press",
   "license": "MIT",

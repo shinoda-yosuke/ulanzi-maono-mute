@@ -26,8 +26,14 @@ lights. This plugin produces that same real mute, two ways, and picks between th
   (`maono-hid`) talks straight to the receiver: it wakes it with the same short handshake Maono Link sends on connect,
   then writes the mute register — LED and all. Maono Link does not need to be running at all.
 
-The key turns grey with a warning badge only when neither is possible — the microphone is not connected and Maono Link
-is not open. The plugin never records or sends audio; it only reads the mute state and flips it.
+Several microphones can be connected at once. Each key mutes the one chosen in its settings, told apart by the
+receiver's USB serial number (or, for one without a serial, the USB port it is plugged into); a key left on
+**Automatic** mutes the only one connected. Maono Link holds only the microphone its panel shows, so that one is muted
+through Maono Link and the others over HID.
+
+The key turns grey with a warning badge only when it cannot reach its microphone — for example, the microphone is not
+connected and Maono Link is not open. The plugin never records or sends audio; it only reads the mute state and flips
+it.
 
 ## Installation
 
@@ -51,10 +57,14 @@ Ulanzi Studio and extract it so that the `com.ulanzi.maonomute.ulanziPlugin` fol
 2. Drag **Maono Mic Mute › Toggle Mute** onto a key.
 3. Press the key. It turns red while the microphone is muted (the device LED lights) and green while it is live.
 
+With several Maono microphones connected, choose the one each key mutes under **Microphone** in the key's settings.
+**Automatic** (the default) mutes the only one connected.
+
 ### Troubleshooting
 
-- **The key is grey with an orange badge**: the plugin cannot reach the microphone. Check that it is plugged in. If
-  Maono Link is open, make sure its window shows this microphone (not a device list or a different device).
+- **The key is grey with an orange badge**: the key cannot reach its microphone; press it, or open its settings, to
+  see why. Check that the microphone is plugged in, and with several connected, that one is chosen for the key. If
+  Maono Link is open, make sure its window shows this microphone (not a device list or a different device), or quit it.
 - **Nothing happens / the LED does not light**: if Maono Link is open, confirm its own mute works first. If it is
   closed, make sure no other app is holding the microphone.
 
@@ -81,11 +91,11 @@ com.ulanzi.maonomute.ulanziPlugin/  the plugin folder as installed: manifest, ic
   plugin/app.js                     bundled from src/ by `npm run build` (not committed)
   plugin/bin/maono-hid              the native HID helper, built from native/ (not committed)
   libs/                             Ulanzi SDK for the property inspector (vendored)
-native/maono-hid.swift              the HID helper source: wakes the receiver and sets its mute register
+native/maono-hid.swift              the HID helper source: lists the receivers, wakes one and sets its mute register
 src/                                main service (Node.js)
   maono-link.js                     talks to Maono Link's local IPC (connect, read/set mute, follow changes)
-  hid-mute.js                       runs the maono-hid helper to mute over HID without Maono Link
-  mute-controller.js                picks Maono Link (IPC) or HID and presents one mute interface
+  hid-mute.js                       runs the maono-hid helper to list the receivers and mute one without Maono Link
+  mute-controller.js                routes each key's microphone to Maono Link (IPC) or HID
   plugin.js app.js                  the action: key icon, settings, the Ulanzi Studio connection
   vendor/plugin-common-node/        Ulanzi SDK for Node.js (vendored)
 scripts/                            build, validation, packaging, install, icon rendering
@@ -95,7 +105,8 @@ design/                             icon sources
 
 Ulanzi Studio starts the main service as `node plugin/app.js <address> <port> <language> <version>`. For debugging,
 launch Ulanzi Studio with `--log` (see "Debug in Desktop App" in the SDK README); the plugin writes connection
-failures with the SDK's `logMessage`.
+failures with the SDK's `logMessage`. The HID helper also runs by hand: `plugin/bin/maono-hid status` lists the
+receivers with their ids and mutes as JSON, and `plugin/bin/maono-hid set 1 <id>` mutes one (`0` unmutes).
 
 ### How the mute command was found
 
@@ -104,7 +115,9 @@ receiver ignores that write until it is "woken" by a control-mode write to regis
 thing Maono Link sends on connect. After that kick the mute reaches the microphone and its LED, and the state latches
 even after the device is closed, so the HID helper is short-lived: open → write `0x000b`=3 → write `0x207d` → close.
 All of this was observed from Maono Link (capturing its `IOHIDDeviceSetReport` calls) for interoperability. The
-signal-only mute (`0x45` / type 8) silences the input but does not light the LED, so it is not used here.
+signal-only mute (`0x45` / type 8) silences the input but does not light the LED, so it is not used here. The HID
+helper only drives the receiver this was verified on, the PD200W's "Maono Wireless Mic RX" (USB `352f:040e`); other
+Maono models are left to Maono Link.
 
 ### Releasing
 
