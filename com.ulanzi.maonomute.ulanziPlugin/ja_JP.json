@@ -16,8 +16,6 @@
     "On": "オン",
     "Muted": "ミュート中",
     "The microphone is not connected, and Maono Link is not open.": "マイクが接続されていないか、Maono Link も開いていません。",
-    "This is the real microphone mute — the device mute LED lights, the same as its own mute button.": "本体そのものの“本物のミュート”です。ミュートボタンと同じく、本体のミュート LED が点灯します。",
-    "It works on its own; and through Maono Link when its microphone panel is open.": "Maono Link なしでも動作し、マイクの画面を開いているときは Maono Link 経由でも動作します。",
     "Connect your Maono microphone, or open Maono Link, so the key can mute it.": "Maono のマイクを接続するか、Maono Link を開いてください。そうすればキーでミュートできます。",
     "Could not change the mute of the microphone.": "マイクのミュートを切り替えられませんでした。",
     "Several Maono microphones are connected. Choose which one this key mutes.": "Maono のマイクが複数接続されています。このキーでミュートするマイクを選んでください。",
