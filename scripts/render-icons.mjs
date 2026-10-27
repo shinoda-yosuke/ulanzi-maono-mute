@@ -1,4 +1,4 @@
-// Renders the SVG sources in design/ to the PNG icons the plugin uses.
+// Renders the SVG sources in design/ to the PNG icons the plugin uses and to the store banner.
 import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 import { Resvg } from '@resvg/resvg-js';
@@ -14,6 +14,8 @@ const IMAGES = [
   ['key-live.svg', path.join(icons, 'key-live.png'), 196],
   ['key-muted.svg', path.join(icons, 'key-muted.png'), 196],
   ['key-unavailable.svg', path.join(icons, 'key-unavailable.png'), 196],
+  // Marketplace banners are 3:2
+  ['banner.svg', path.join('store', 'banner-1.png'), 1098],
 ];
 
 for (const [source, output, width] of IMAGES) {
