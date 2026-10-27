@@ -1,0 +1,27 @@
+{
+  "Name": "Maono 마이크 음소거",
+  "Description": "키 하나로 Maono USB 마이크를 음소거하거나 해제합니다. 마이크가 음소거되었는지 키에 표시됩니다.",
+  "Actions": [
+    {
+      "Name": "음소거 전환",
+      "Tooltip": "Maono 마이크의 음소거를 전환합니다. 키에 음소거 상태가 표시됩니다"
+    }
+  ],
+  "Localization": {
+    "Microphone": "마이크",
+    "Status": "상태",
+    "Automatic (Maono)": "자동 (Maono)",
+    "{name} (cannot be muted)": "{name} (음소거 불가)",
+    "{name} (not connected)": "{name} (연결 안 됨)",
+    "Loading…": "불러오는 중…",
+    "On": "켜짐",
+    "Muted": "음소거됨",
+    "Automatic mutes the Maono microphone connected over USB, ahead of virtual devices such as Maono AI Microphone.": "'자동'은 Maono AI Microphone 같은 가상 장치보다 USB로 연결된 Maono 마이크 본체를 우선해 음소거합니다.",
+    "The key turns red while the microphone is muted, also when another app mutes it.": "마이크가 음소거되면 키가 빨간색으로 바뀝니다. 다른 앱에서 음소거한 경우에도 반영됩니다.",
+    "No Maono microphone that can be muted is connected.": "음소거할 수 있는 Maono 마이크가 연결되어 있지 않습니다.",
+    "The selected microphone is not connected.": "선택한 마이크가 연결되어 있지 않습니다.",
+    "This microphone cannot be muted from the computer.": "이 마이크는 컴퓨터에서 음소거할 수 없습니다.",
+    "Cannot access the audio devices.": "오디오 장치에 접근할 수 없습니다.",
+    "Could not change the mute of the microphone.": "마이크 음소거를 전환하지 못했습니다."
+  }
+}

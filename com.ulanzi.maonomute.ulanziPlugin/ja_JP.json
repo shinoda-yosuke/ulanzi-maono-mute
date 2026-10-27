@@ -1,0 +1,27 @@
+{
+  "Name": "Maono マイクミュート",
+  "Description": "Maono の USB マイクをキー 1 つでミュート・解除します。ミュート中かどうかはキーの表示でわかります。",
+  "Actions": [
+    {
+      "Name": "ミュート切り替え",
+      "Tooltip": "Maono マイクのミュートを切り替えます。キーにミュート状態を表示します"
+    }
+  ],
+  "Localization": {
+    "Microphone": "マイク",
+    "Status": "状態",
+    "Automatic (Maono)": "自動（Maono）",
+    "{name} (cannot be muted)": "{name}（ミュート非対応）",
+    "{name} (not connected)": "{name}（未接続）",
+    "Loading…": "読み込み中…",
+    "On": "オン",
+    "Muted": "ミュート中",
+    "Automatic mutes the Maono microphone connected over USB, ahead of virtual devices such as Maono AI Microphone.": "「自動」では、USB で接続した Maono のマイク本体を、Maono AI Microphone などの仮想デバイスより優先してミュートします。",
+    "The key turns red while the microphone is muted, also when another app mutes it.": "ミュート中はキーが赤くなります。ほかのアプリでミュートした場合も反映されます。",
+    "No Maono microphone that can be muted is connected.": "ミュートできる Maono のマイクが接続されていません。",
+    "The selected microphone is not connected.": "選択したマイクが接続されていません。",
+    "This microphone cannot be muted from the computer.": "このマイクはコンピュータからミュートできません。",
+    "Cannot access the audio devices.": "オーディオデバイスにアクセスできません。",
+    "Could not change the mute of the microphone.": "マイクのミュートを切り替えられませんでした。"
+  }
+}

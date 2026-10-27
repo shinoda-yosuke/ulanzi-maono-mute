@@ -1,0 +1,32 @@
+name: Release
+
+# Push a tag such as v1.0.0 (matching manifest.json "Version") to publish the packaged plugin.
+on:
+  push:
+    tags: ['v*']
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm test
+      - name: Check that the tag matches the plugin version
+        run: |
+          version=$(node -p "require('./com.ulanzi.maonomute.ulanziPlugin/manifest.json').Version")
+          if [ "v$version" != "$GITHUB_REF_NAME" ]; then
+            echo "::error::Tag $GITHUB_REF_NAME does not match manifest.json Version $version"
+            exit 1
+          fi
+      - run: npm run package
+      - run: gh release create "$GITHUB_REF_NAME" dist/com.ulanzi.maonomute.ulanziPlugin.zip --title "$GITHUB_REF_NAME" --generate-notes
+        env:
+          GH_TOKEN: ${{ github.token }}

@@ -1,0 +1,27 @@
+{
+  "Name": "Silenciar microfone Maono",
+  "Description": "Silencia e reativa um microfone USB Maono com uma tecla. A tecla mostra se o microfone está silenciado.",
+  "Actions": [
+    {
+      "Name": "Alternar silêncio",
+      "Tooltip": "Silencia ou reativa o microfone Maono; a tecla mostra se está silenciado"
+    }
+  ],
+  "Localization": {
+    "Microphone": "Microfone",
+    "Status": "Estado",
+    "Automatic (Maono)": "Automático (Maono)",
+    "{name} (cannot be muted)": "{name} (não pode ser silenciado)",
+    "{name} (not connected)": "{name} (não ligado)",
+    "Loading…": "A carregar…",
+    "On": "Ligado",
+    "Muted": "Silenciado",
+    "Automatic mutes the Maono microphone connected over USB, ahead of virtual devices such as Maono AI Microphone.": "O modo automático silencia o microfone Maono ligado por USB, antes de dispositivos virtuais como o Maono AI Microphone.",
+    "The key turns red while the microphone is muted, also when another app mutes it.": "A tecla fica vermelha enquanto o microfone está silenciado, também quando outra aplicação o silencia.",
+    "No Maono microphone that can be muted is connected.": "Não está ligado nenhum microfone Maono que possa ser silenciado.",
+    "The selected microphone is not connected.": "O microfone selecionado não está ligado.",
+    "This microphone cannot be muted from the computer.": "Este microfone não pode ser silenciado a partir do computador.",
+    "Cannot access the audio devices.": "Não é possível aceder aos dispositivos de áudio.",
+    "Could not change the mute of the microphone.": "Não foi possível alterar o silêncio do microfone."
+  }
+}

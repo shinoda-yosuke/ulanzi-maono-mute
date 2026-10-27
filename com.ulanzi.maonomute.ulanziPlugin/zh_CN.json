@@ -1,0 +1,27 @@
+{
+  "Name": "Maono 麦克风静音",
+  "Description": "一键将 Maono USB 麦克风静音或取消静音。按键会显示麦克风是否已静音。",
+  "Actions": [
+    {
+      "Name": "切换静音",
+      "Tooltip": "将 Maono 麦克风静音或取消静音；按键显示是否已静音"
+    }
+  ],
+  "Localization": {
+    "Microphone": "麦克风",
+    "Status": "状态",
+    "Automatic (Maono)": "自动（Maono）",
+    "{name} (cannot be muted)": "{name}（不支持静音）",
+    "{name} (not connected)": "{name}（未连接）",
+    "Loading…": "加载中…",
+    "On": "开启",
+    "Muted": "已静音",
+    "Automatic mutes the Maono microphone connected over USB, ahead of virtual devices such as Maono AI Microphone.": "“自动”会优先将通过 USB 连接的 Maono 麦克风本身静音，而不是 Maono AI Microphone 等虚拟设备。",
+    "The key turns red while the microphone is muted, also when another app mutes it.": "麦克风静音时按键变为红色；其他应用将其静音时也会同步显示。",
+    "No Maono microphone that can be muted is connected.": "未连接可静音的 Maono 麦克风。",
+    "The selected microphone is not connected.": "所选麦克风未连接。",
+    "This microphone cannot be muted from the computer.": "无法从电脑将此麦克风静音。",
+    "Cannot access the audio devices.": "无法访问音频设备。",
+    "Could not change the mute of the microphone.": "无法切换麦克风的静音状态。"
+  }
+}

@@ -1,0 +1,27 @@
+{
+  "Name": "Maono-Mikrofon stummschalten",
+  "Description": "Schaltet ein Maono-USB-Mikrofon per Tastendruck stumm und wieder ein. Die Taste zeigt an, ob das Mikrofon stummgeschaltet ist.",
+  "Actions": [
+    {
+      "Name": "Stummschaltung umschalten",
+      "Tooltip": "Schaltet das Maono-Mikrofon stumm oder wieder ein; die Taste zeigt an, ob es stummgeschaltet ist"
+    }
+  ],
+  "Localization": {
+    "Microphone": "Mikrofon",
+    "Status": "Status",
+    "Automatic (Maono)": "Automatisch (Maono)",
+    "{name} (cannot be muted)": "{name} (nicht stummschaltbar)",
+    "{name} (not connected)": "{name} (nicht verbunden)",
+    "Loading…": "Wird geladen …",
+    "On": "An",
+    "Muted": "Stumm",
+    "Automatic mutes the Maono microphone connected over USB, ahead of virtual devices such as Maono AI Microphone.": "Automatisch schaltet das per USB verbundene Maono-Mikrofon stumm, vor virtuellen Geräten wie Maono AI Microphone.",
+    "The key turns red while the microphone is muted, also when another app mutes it.": "Die Taste wird rot, solange das Mikrofon stummgeschaltet ist – auch wenn eine andere App es stummschaltet.",
+    "No Maono microphone that can be muted is connected.": "Es ist kein Maono-Mikrofon verbunden, das stummgeschaltet werden kann.",
+    "The selected microphone is not connected.": "Das ausgewählte Mikrofon ist nicht verbunden.",
+    "This microphone cannot be muted from the computer.": "Dieses Mikrofon kann nicht vom Computer aus stummgeschaltet werden.",
+    "Cannot access the audio devices.": "Kein Zugriff auf die Audiogeräte.",
+    "Could not change the mute of the microphone.": "Die Stummschaltung des Mikrofons konnte nicht geändert werden."
+  }
+}

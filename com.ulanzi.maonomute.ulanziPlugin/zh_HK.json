@@ -1,0 +1,27 @@
+{
+  "Name": "Maono 麥克風靜音",
+  "Description": "一鍵將 Maono USB 麥克風靜音或取消靜音。按鍵會顯示麥克風是否已靜音。",
+  "Actions": [
+    {
+      "Name": "切換靜音",
+      "Tooltip": "將 Maono 麥克風靜音或取消靜音；按鍵顯示是否已靜音"
+    }
+  ],
+  "Localization": {
+    "Microphone": "麥克風",
+    "Status": "狀態",
+    "Automatic (Maono)": "自動（Maono）",
+    "{name} (cannot be muted)": "{name}（不支援靜音）",
+    "{name} (not connected)": "{name}（未連接）",
+    "Loading…": "載入中…",
+    "On": "開啟",
+    "Muted": "已靜音",
+    "Automatic mutes the Maono microphone connected over USB, ahead of virtual devices such as Maono AI Microphone.": "「自動」會優先將透過 USB 連接的 Maono 麥克風本身靜音，而非 Maono AI Microphone 等虛擬裝置。",
+    "The key turns red while the microphone is muted, also when another app mutes it.": "麥克風靜音時按鍵會變成紅色；其他應用程式將其靜音時也會同步顯示。",
+    "No Maono microphone that can be muted is connected.": "未連接可靜音的 Maono 麥克風。",
+    "The selected microphone is not connected.": "所選的麥克風未連接。",
+    "This microphone cannot be muted from the computer.": "無法從電腦將此麥克風靜音。",
+    "Cannot access the audio devices.": "無法存取音訊裝置。",
+    "Could not change the mute of the microphone.": "無法切換麥克風的靜音狀態。"
+  }
+}

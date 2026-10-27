@@ -1,0 +1,27 @@
+{
+  "Name": "Maono Mic Mute",
+  "Description": "Mute and unmute a Maono USB microphone with a key press. The key shows whether the microphone is muted.",
+  "Actions": [
+    {
+      "Name": "Toggle Mute",
+      "Tooltip": "Mute or unmute the Maono microphone; the key shows whether it is muted"
+    }
+  ],
+  "Localization": {
+    "Microphone": "Microphone",
+    "Status": "Status",
+    "Automatic (Maono)": "Automatic (Maono)",
+    "{name} (cannot be muted)": "{name} (cannot be muted)",
+    "{name} (not connected)": "{name} (not connected)",
+    "Loading…": "Loading…",
+    "On": "On",
+    "Muted": "Muted",
+    "Automatic mutes the Maono microphone connected over USB, ahead of virtual devices such as Maono AI Microphone.": "Automatic mutes the Maono microphone connected over USB, ahead of virtual devices such as Maono AI Microphone.",
+    "The key turns red while the microphone is muted, also when another app mutes it.": "The key turns red while the microphone is muted, also when another app mutes it.",
+    "No Maono microphone that can be muted is connected.": "No Maono microphone that can be muted is connected.",
+    "The selected microphone is not connected.": "The selected microphone is not connected.",
+    "This microphone cannot be muted from the computer.": "This microphone cannot be muted from the computer.",
+    "Cannot access the audio devices.": "Cannot access the audio devices.",
+    "Could not change the mute of the microphone.": "Could not change the mute of the microphone."
+  }
+}

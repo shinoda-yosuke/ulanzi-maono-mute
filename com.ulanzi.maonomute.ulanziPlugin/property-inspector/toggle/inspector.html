@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,minimum-scale=1,user-scalable=no,minimal-ui,viewport-fit=cover" />
+  <title>Toggle Mute</title>
+  <link rel="stylesheet" href="../../libs/css/uspi.css">
+  <style>
+    .status {
+      width: var(--uspi-width);
+      min-width: 0;
+      font-size: 12px;
+      line-height: 16px;
+      overflow-wrap: anywhere;
+    }
+    .status.live {
+      color: var(--uspi-theme);
+    }
+    .status.muted,
+    .status.error {
+      color: #ff6b6b;
+    }
+    .note {
+      margin: 0 10px 6px calc(var(--uspi-label-width) + 20px);
+      max-width: var(--uspi-width);
+      color: var(--uspi-unitcolor);
+      font-size: 12px;
+      line-height: 18px;
+    }
+  </style>
+</head>
+<body>
+  <div class="uspi-wrapper hidden">
+    <div class="uspi-item">
+      <label class="uspi-item-label" for="device" data-localize>Microphone</label>
+      <select class="uspi-item-value" id="device"></select>
+    </div>
+
+    <div class="uspi-item">
+      <div class="uspi-item-label" data-localize>Status</div>
+      <span id="status" class="status" role="status" aria-live="polite"></span>
+    </div>
+
+    <p class="note" data-localize>Automatic mutes the Maono microphone connected over USB, ahead of virtual devices such as Maono AI Microphone.</p>
+    <p class="note" data-localize>The key turns red while the microphone is muted, also when another app mutes it.</p>
+  </div>
+
+  <script src="../../libs/js/constants.js"></script>
+  <script src="../../libs/js/eventEmitter.js"></script>
+  <script src="../../libs/js/timers.js"></script>
+  <script src="../../libs/js/utils.js"></script>
+  <script src="../../libs/js/ulanziApi.js"></script>
+  <script src="./inspector.js"></script>
+</body>
+</html>

@@ -1,0 +1,32 @@
+{
+  "name": "ulanzi-maono-mute",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Ulanzi Studio (UlanziDeck) plugin that toggles the mute of a Maono microphone with a key press",
+  "license": "MIT",
+  "author": "shinoda-yosuke",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/shinoda-yosuke/ulanzi-maono-mute.git"
+  },
+  "type": "module",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "build": "node scripts/build.mjs",
+    "test": "node scripts/build.mjs && node --test \"test/*.test.js\"",
+    "package": "node scripts/package.mjs",
+    "plugin:install": "node scripts/install-plugin.mjs",
+    "plugin:link": "node scripts/install-plugin.mjs --link",
+    "plugin:uninstall": "node scripts/install-plugin.mjs --uninstall",
+    "icons": "node scripts/render-icons.mjs"
+  },
+  "dependencies": {
+    "ws": "^8.22.0"
+  },
+  "devDependencies": {
+    "@resvg/resvg-js": "^2.6.2",
+    "esbuild": "^0.28.2"
+  }
+}
