@@ -68,6 +68,12 @@ With several Maono microphones connected, choose the one each key mutes under **
 - **Nothing happens / the LED does not light**: if Maono Link is open, confirm its own mute works first. If it is
   closed, make sure no other app is holding the microphone.
 
+## Privacy
+
+Maono Mic Mute does not collect, store or send any data, and it never records or sends audio. It only talks to the
+microphone's receiver over USB and to Maono Link on your Mac, to read the mute state and change it. The microphone
+chosen for a key is saved by Ulanzi Studio with the key's settings.
+
 ## Development
 
 ```sh
@@ -100,7 +106,8 @@ src/                                main service (Node.js)
   vendor/plugin-common-node/        Ulanzi SDK for Node.js (vendored)
 scripts/                            build, validation, packaging, install, icon rendering
 test/                               node:test suites; fixtures/ run a fake Maono Link IPC server and HID helper
-design/                             icon sources
+design/                             icon and store banner sources
+store/                              marketplace submission kit: listing texts in 7 languages, banner, steps
 ```
 
 Ulanzi Studio starts the main service as `node plugin/app.js <address> <port> <language> <version>`. For debugging,
