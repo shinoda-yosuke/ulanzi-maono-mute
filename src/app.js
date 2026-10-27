@@ -1,14 +1,25 @@
 // Main service entry. Ulanzi Studio starts it as `node plugin/app.js <address> <port> <language> <version>`.
+import path from 'node:path';
 import UlanziApi from './vendor/plugin-common-node/index.js';
+import { HidMute } from './hid-mute.js';
 import { MaonoLink } from './maono-link.js';
+import { MuteController } from './mute-controller.js';
 import { PLUGIN_UUID, registerMuteAction } from './plugin.js';
 
 const $UD = new UlanziApi();
+const log = (message, level) => $UD.logMessage(message, level);
 
-// The microphone mute goes through Maono Link's local IPC, so it is the real mute (the device LED lights).
-const link = new MaonoLink({ log: (message, level) => $UD.logMessage(message, level) });
+// The real microphone mute, the one that lights the device LED: through Maono Link's local IPC when its
+// microphone panel is open, or straight to the receiver over HID (via the maono-hid helper) when it is not.
+const link = new MaonoLink({ log });
+const hid = new HidMute({
+  // scripts/build.mjs builds the helper next to app.js; the tests point MAONO_MUTE_HELPER at a fake one
+  command: process.env.MAONO_MUTE_HELPER || path.join(path.dirname(process.argv[1]), 'bin', 'maono-hid'),
+  log,
+});
+const controller = new MuteController({ link, hid });
 
-registerMuteAction({ api: $UD, link });
+registerMuteAction({ api: $UD, link: controller });
 
 // EventEmitter throws on an "error" event nobody listens to
 $UD.onError((error) => console.error(error));

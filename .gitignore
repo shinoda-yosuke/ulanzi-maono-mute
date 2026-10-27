@@ -4,3 +4,6 @@ dist/
 *.log
 # Built by scripts/build.mjs
 com.ulanzi.maonomute.ulanziPlugin/plugin/app.js
+
+# Built by scripts/build-helper.mjs
+com.ulanzi.maonomute.ulanziPlugin/plugin/bin/

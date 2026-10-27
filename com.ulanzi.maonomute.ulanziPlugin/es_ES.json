@@ -1,6 +1,6 @@
 {
   "Name": "Silenciar micrófono Maono",
-  "Description": "Silencia y reactiva un micrófono Maono con una tecla, a través de Maono Link: el silencio real, con el LED del dispositivo. La tecla muestra si el micrófono está silenciado.",
+  "Description": "Silencia y reactiva un micrófono Maono con una tecla: el silencio real, con el LED del dispositivo. Funciona por sí solo o a través de Maono Link. La tecla muestra si el micrófono está silenciado.",
   "Actions": [
     {
       "Name": "Alternar silencio",
@@ -12,10 +12,10 @@
     "Loading…": "Cargando…",
     "On": "Activado",
     "Muted": "Silenciado",
-    "Maono Link is not running, or the microphone panel is not open.": "Maono Link no está en ejecución, o el panel del micrófono no está abierto.",
-    "This mutes the microphone itself through Maono Link — the device mute LED lights, the same as its own mute button.": "Silencia el micrófono en sí a través de Maono Link. Como con su botón de silencio, el LED de silencio del dispositivo se enciende.",
-    "Keep Maono Link running with your microphone panel open; otherwise the key cannot reach the mute.": "Mantén Maono Link en ejecución con el panel del micrófono abierto; de lo contrario, la tecla no puede acceder al silencio.",
-    "Open Maono Link and show your microphone so the key can mute it.": "Abre Maono Link y muestra tu micrófono para que la tecla pueda silenciarlo.",
+    "The microphone is not connected, and Maono Link is not open.": "El micrófono no está conectado y Maono Link no está abierto.",
+    "This is the real microphone mute — the device mute LED lights, the same as its own mute button.": "Es el silencio real del micrófono: como con su botón de silencio, el LED de silencio del dispositivo se enciende.",
+    "It works on its own; and through Maono Link when its microphone panel is open.": "Funciona por sí solo; y a través de Maono Link cuando el panel del micrófono está abierto.",
+    "Connect your Maono microphone, or open Maono Link, so the key can mute it.": "Conecta tu micrófono Maono, o abre Maono Link, para que la tecla pueda silenciarlo.",
     "Could not change the mute of the microphone.": "No se pudo cambiar el silencio del micrófono."
   }
 }

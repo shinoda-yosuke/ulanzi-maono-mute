@@ -17,21 +17,22 @@ the key whether the microphone is muted. macOS only.
 ## How it works
 
 Maono Link's mute button does more than silence the signal: it mutes the microphone itself, and the device's mute LED
-lights. That mute is driven by Maono Link over its local IPC socket, so this plugin sends the very same command
-(mute "type 5", the microphone's mute register) through that socket. Pressing the key is then exactly like pressing
-mute in Maono Link — LED and all. The key also follows mutes you make in Maono Link.
+lights. This plugin produces that same real mute, two ways, and picks between them automatically:
 
-Because the mute goes through Maono Link, **Maono Link must be running with your microphone's panel open** (that is when
-its IPC is available). When it is not, the key turns grey with a warning badge, and pressing it tells you to open
-Maono Link. (A plain signal mute that works without Maono Link is possible but does *not* light the LED, so this plugin
-does not use it.)
+- **Through Maono Link**, when its microphone panel is open. The plugin sends the very same command Maono Link's own
+  button sends (mute "type 5", the microphone's mute register) over Maono Link's local IPC socket. The key also follows
+  mutes you make in Maono Link.
+- **On its own over HID**, when Maono Link is closed (or running without the panel open). A small native helper
+  (`maono-hid`) talks straight to the receiver: it wakes it with the same short handshake Maono Link sends on connect,
+  then writes the mute register — LED and all. Maono Link does not need to be running at all.
 
-The plugin is plain Node.js — it never records or sends audio, and needs no native helper. It only reads the mute
-state and flips it, through Maono Link.
+The key turns grey with a warning badge only when neither is possible — the microphone is not connected and Maono Link
+is not open. The plugin never records or sends audio; it only reads the mute state and flips it.
 
 ## Installation
 
-You need Node.js 22 or later. (No Xcode tools — the plugin is pure Node.js.)
+You need Node.js 22 or later and the Xcode Command Line Tools, which provide the compiler for the small HID helper
+(run `xcode-select --install` if you do not have them).
 
 ```sh
 npm ci
@@ -46,16 +47,16 @@ Ulanzi Studio and extract it so that the `com.ulanzi.maonomute.ulanziPlugin` fol
 
 ## Usage
 
-1. Make sure **Maono Link** is running and showing your microphone (its panel open).
+1. Make sure your Maono microphone is connected. Maono Link does not need to be running.
 2. Drag **Maono Mic Mute › Toggle Mute** onto a key.
 3. Press the key. It turns red while the microphone is muted (the device LED lights) and green while it is live.
 
 ### Troubleshooting
 
-- **The key is grey with an orange badge**: the plugin cannot reach the mute. Open Maono Link and show your
-  microphone's panel; the IPC that carries the mute is only there then.
-- **Nothing happens / the LED does not light**: confirm the mute works in Maono Link itself first, then that
-  Maono Link's window shows the microphone (not a device list or a different device).
+- **The key is grey with an orange badge**: the plugin cannot reach the microphone. Check that it is plugged in. If
+  Maono Link is open, make sure its window shows this microphone (not a device list or a different device).
+- **Nothing happens / the LED does not light**: if Maono Link is open, confirm its own mute works first. If it is
+  closed, make sure no other app is holding the microphone.
 
 ## Development
 
@@ -78,13 +79,17 @@ PLUGIN_NODE="/Applications/Ulanzi Studio.app/Contents/MacOS/NodeJS/node" npm tes
 ```text
 com.ulanzi.maonomute.ulanziPlugin/  the plugin folder as installed: manifest, icons, property inspector, translations
   plugin/app.js                     bundled from src/ by `npm run build` (not committed)
+  plugin/bin/maono-hid              the native HID helper, built from native/ (not committed)
   libs/                             Ulanzi SDK for the property inspector (vendored)
+native/maono-hid.swift              the HID helper source: wakes the receiver and sets its mute register
 src/                                main service (Node.js)
   maono-link.js                     talks to Maono Link's local IPC (connect, read/set mute, follow changes)
+  hid-mute.js                       runs the maono-hid helper to mute over HID without Maono Link
+  mute-controller.js                picks Maono Link (IPC) or HID and presents one mute interface
   plugin.js app.js                  the action: key icon, settings, the Ulanzi Studio connection
   vendor/plugin-common-node/        Ulanzi SDK for Node.js (vendored)
 scripts/                            build, validation, packaging, install, icon rendering
-test/                               node:test suites; fixtures/ run a fake Maono Link IPC server
+test/                               node:test suites; fixtures/ run a fake Maono Link IPC server and HID helper
 design/                             icon sources
 ```
 
@@ -94,9 +99,12 @@ failures with the SDK's `logMessage`.
 
 ### How the mute command was found
 
-Maono Link's mute goes to device register `0x207d` (value 1 mutes, 0 unmutes); over its IPC that is mute "type 5".
-This was observed from Maono Link for interoperability. The signal-only mute (`0x45` / type 8) silences the input but
-does not light the LED, so it is not used here.
+Maono Link's mute goes to device register `0x207d` (value 1 mutes, 0 unmutes); over its IPC that is mute "type 5". The
+receiver ignores that write until it is "woken" by a control-mode write to register `0x000b` (value 3) — the first
+thing Maono Link sends on connect. After that kick the mute reaches the microphone and its LED, and the state latches
+even after the device is closed, so the HID helper is short-lived: open → write `0x000b`=3 → write `0x207d` → close.
+All of this was observed from Maono Link (capturing its `IOHIDDeviceSetReport` calls) for interoperability. The
+signal-only mute (`0x45` / type 8) silences the input but does not light the LED, so it is not used here.
 
 ### Releasing
 

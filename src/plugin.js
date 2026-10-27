@@ -3,26 +3,26 @@ export const ACTION_UUID = `${PLUGIN_UUID}.toggle`;
 
 /** Indexes into the action's "States" in manifest.json */
 export const STATES = Object.freeze({ live: 0, muted: 1 });
-/** Shown instead of a state when the mute cannot be reached (Maono Link closed or its panel not open) */
+/** Shown instead of a state when the mute cannot be reached (microphone not connected, nor Maono Link open) */
 export const UNAVAILABLE_ICON = 'assets/icons/key-unavailable.png';
 
 // English texts double as localization keys (see the "Localization" section of <language>.json),
 // following the SDK convention, so an untranslated language still gets readable messages.
 export const MESSAGES = Object.freeze({
-  unavailable: 'Open Maono Link and show your microphone so the key can mute it.',
+  unavailable: 'Connect your Maono microphone, or open Maono Link, so the key can mute it.',
   failed: 'Could not change the mute of the microphone.',
 });
 
 const posOf = (param) => (Number.isInteger(param?.pos) ? param.pos : 0);
 
 /**
- * Wires the "Toggle Mute" action to a connection with Ulanzi Studio. The mute goes through Maono Link's local
- * IPC, so it is the real microphone mute (the device's LED lights). That needs Maono Link running with the
- * microphone's panel open.
+ * Wires the "Toggle Mute" action to a connection with Ulanzi Studio. The mute is the real microphone mute
+ * (the device's LED lights): through Maono Link's IPC when its panel is open, or straight to the receiver over
+ * HID otherwise. Both are presented by the one controller passed as `link`.
  *
  * @param {object} options
  * @param {import('./vendor/plugin-common-node/libs/ulanziApi.js').default} options.api
- * @param {import('./maono-link.js').MaonoLink} options.link
+ * @param {import('./mute-controller.js').MuteController} options.link the mute controller (MaonoLink-shaped)
  */
 export function registerMuteAction({ api, link }) {
   /** Keys showing this action, keyed by context: the device position they mute and the view they last showed. */

@@ -18,7 +18,7 @@ function showStatus(text, kind) {
 function renderStatus() {
   if (!report) return showStatus($UD.t('Loading…'));
   if (!report.available) {
-    return showStatus($UD.t('Maono Link is not running, or the microphone panel is not open.'), 'error');
+    return showStatus($UD.t('The microphone is not connected, and Maono Link is not open.'), 'error');
   }
   if (report.muted === true) return showStatus($UD.t('Muted'), 'muted');
   if (report.muted === false) return showStatus($UD.t('On'), 'live');

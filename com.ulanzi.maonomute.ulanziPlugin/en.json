@@ -1,6 +1,6 @@
 {
   "Name": "Maono Mic Mute",
-  "Description": "Mute and unmute a Maono microphone with a key press, through Maono Link — the real mute, with the device LED. The key shows whether the microphone is muted.",
+  "Description": "Mute and unmute a Maono microphone with a key press — the real mute, with the device LED. Works on its own, or through Maono Link. The key shows whether the microphone is muted.",
   "Actions": [
     {
       "Name": "Toggle Mute",
@@ -12,10 +12,10 @@
     "Loading…": "Loading…",
     "On": "On",
     "Muted": "Muted",
-    "Maono Link is not running, or the microphone panel is not open.": "Maono Link is not running, or the microphone panel is not open.",
-    "This mutes the microphone itself through Maono Link — the device mute LED lights, the same as its own mute button.": "This mutes the microphone itself through Maono Link — the device mute LED lights, the same as its own mute button.",
-    "Keep Maono Link running with your microphone panel open; otherwise the key cannot reach the mute.": "Keep Maono Link running with your microphone panel open; otherwise the key cannot reach the mute.",
-    "Open Maono Link and show your microphone so the key can mute it.": "Open Maono Link and show your microphone so the key can mute it.",
+    "The microphone is not connected, and Maono Link is not open.": "The microphone is not connected, and Maono Link is not open.",
+    "This is the real microphone mute — the device mute LED lights, the same as its own mute button.": "This is the real microphone mute — the device mute LED lights, the same as its own mute button.",
+    "It works on its own; and through Maono Link when its microphone panel is open.": "It works on its own; and through Maono Link when its microphone panel is open.",
+    "Connect your Maono microphone, or open Maono Link, so the key can mute it.": "Connect your Maono microphone, or open Maono Link, so the key can mute it.",
     "Could not change the mute of the microphone.": "Could not change the mute of the microphone."
   }
 }
