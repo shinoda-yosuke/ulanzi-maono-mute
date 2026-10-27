@@ -1,6 +1,6 @@
 {
   "Name": "Maono 麥克風靜音",
-  "Description": "一鍵將 Maono USB 麥克風靜音或取消靜音。按鍵會顯示麥克風是否已靜音。",
+  "Description": "像 Maono Link 一樣，一鍵將 Maono USB 麥克風靜音或取消靜音。按鍵會顯示麥克風是否已靜音。",
   "Actions": [
     {
       "Name": "切換靜音",
@@ -8,20 +8,25 @@
     }
   ],
   "Localization": {
-    "Microphone": "麥克風",
+    "Mute method": "靜音方式",
+    "Maono Link first, then USB": "優先 Maono Link，其次 USB",
+    "USB first, then Maono Link": "優先 USB，其次 Maono Link",
+    "Maono Link only": "僅 Maono Link",
+    "USB (direct) only": "僅 USB（直接）",
     "Status": "狀態",
-    "Automatic (Maono)": "自動（Maono）",
-    "{name} (cannot be muted)": "{name}（不支援靜音）",
-    "{name} (not connected)": "{name}（未連接）",
-    "Loading…": "載入中…",
-    "On": "開啟",
+    "Maono Link": "Maono Link",
+    "USB (direct)": "USB（直接）",
+    "not running": "未執行",
+    "microphone not connected": "麥克風未連接",
+    "available": "可用",
     "Muted": "已靜音",
-    "Automatic mutes the Maono microphone connected over USB, ahead of virtual devices such as Maono AI Microphone.": "「自動」會優先將透過 USB 連接的 Maono 麥克風本身靜音，而非 Maono AI Microphone 等虛擬裝置。",
-    "The key turns red while the microphone is muted, also when another app mutes it.": "麥克風靜音時按鍵會變成紅色；其他應用程式將其靜音時也會同步顯示。",
-    "No Maono microphone that can be muted is connected.": "未連接可靜音的 Maono 麥克風。",
-    "The selected microphone is not connected.": "所選的麥克風未連接。",
-    "This microphone cannot be muted from the computer.": "無法從電腦將此麥克風靜音。",
-    "Cannot access the audio devices.": "無法存取音訊裝置。",
+    "On": "開啟",
+    "Loading…": "載入中…",
+    "Maono Link mutes exactly like its own mute button. USB (direct) talks to the microphone itself, so it works even when Maono Link is closed.": "Maono Link 的效果與其靜音按鍵完全相同。USB（直接）直接與麥克風通訊，因此即使關閉 Maono Link 也能運作。",
+    "While Maono Link is showing the microphone it holds it, so the USB method is busy then; the key falls back to the other method.": "當 Maono Link 顯示該麥克風時會佔用它，此時 USB 方式忙碌，按鍵會回退到另一種方式。",
+    "Maono Link is not running.": "Maono Link 未執行。",
+    "The microphone is not connected.": "麥克風未連接。",
+    "No way to mute the microphone is available.": "沒有可用的靜音方式。",
     "Could not change the mute of the microphone.": "無法切換麥克風的靜音狀態。"
   }
 }

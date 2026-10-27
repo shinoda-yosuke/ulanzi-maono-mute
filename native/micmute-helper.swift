@@ -1,263 +1,112 @@
-// micmute-helper: lets the plugin's Node.js main service, which cannot call CoreAudio itself,
-// read and change the mute of audio input devices. It speaks JSON lines over stdin/stdout:
+// micmute-helper: lets the plugin's Node.js main service, which cannot speak USB-HID, mute a Maono microphone
+// over HID — the same register write Maono Link's mute button sends, so it works without Maono Link running.
 //
-//   → {"id":1,"cmd":"toggleMute","uid":"<device UID>"}            ← {"id":1,"ok":true,"muted":true}
-//   → {"id":2,"cmd":"setMute","uid":"<device UID>","muted":false}  ← {"id":2,"ok":true,"muted":false}
-//   → {"id":3,"cmd":"list"}                                        ← {"id":3,"ok":true,"devices":[…]}
-//   ← {"event":"devices","devices":[…]}  on start and whenever input devices or their mute change
+// It speaks JSON lines over stdin/stdout:
+//   → {"id":1,"cmd":"setMute","muted":true}   ← {"id":1,"ok":true,"muted":true}
+//   → {"id":2,"cmd":"list"}                    ← {"id":2,"ok":true,"devices":[…]}
+//   ← {"event":"devices","devices":[…]}  on start and whenever a Maono microphone is plugged in or out
+// Failed commands answer {"id":…,"ok":false,"error":"no-device" | "busy" | "failed" | "bad-request"}.
+// "busy" means Maono Link holds the microphone exclusively right now; the caller should fall back to IPC.
 //
-// Failed commands answer {"id":…,"ok":false,"error":"not-found" | "not-supported" | "failed" | "bad-request"}.
-// Diagnostics go to stderr. The helper exits when stdin closes, so it never outlives the main service.
-// `micmute-helper list` prints the input devices once and exits (for troubleshooting).
+// It never holds the device open: it opens only to write and closes immediately, so Maono Link can always
+// seize it. Diagnostics go to stderr. It exits when stdin closes, so it never outlives the main service.
+//   micmute-helper list   prints the Maono microphones once and exits (for troubleshooting).
 
-import CoreAudio
+import IOKit.hid
 import Foundation
 
-let systemObject = AudioObjectID(kAudioObjectSystemObject)
-
-func address(
-    _ selector: AudioObjectPropertySelector,
-    _ scope: AudioObjectPropertyScope = kAudioObjectPropertyScopeGlobal,
-    _ element: AudioObjectPropertyElement = kAudioObjectPropertyElementMain
-) -> AudioObjectPropertyAddress {
-    AudioObjectPropertyAddress(mSelector: selector, mScope: scope, mElement: element)
-}
-
-func sameAddress(_ lhs: AudioObjectPropertyAddress, _ rhs: AudioObjectPropertyAddress) -> Bool {
-    lhs.mSelector == rhs.mSelector && lhs.mScope == rhs.mScope && lhs.mElement == rhs.mElement
-}
+// Maono's USB vendor id. The control interface is the Consumer-Control one (usage page 0x0C) whose
+// numbered report 0xC4 carries 63-byte register packets.
+let MAONO_VENDOR_ID = 0x352F
+let CONSUMER_USAGE_PAGE = 0x0C
+let REPORT_ID: UInt8 = 0xC4
+// Register 0x45 is the microphone mute (value 1 = muted); the same register Maono Link writes.
+let MUTE_REGISTER: UInt16 = 0x45
 
 func logError(_ message: String) {
     FileHandle.standardError.write(Data("micmute-helper: \(message)\n".utf8))
 }
 
-func readUInt32(_ object: AudioObjectID, _ addr: AudioObjectPropertyAddress) -> UInt32? {
-    var addr = addr
-    var value: UInt32 = 0
-    var size = UInt32(MemoryLayout<UInt32>.size)
-    return AudioObjectGetPropertyData(object, &addr, 0, nil, &size, &value) == noErr ? value : nil
+/// The 63-byte payload of a register write, after the 0xC4 report id, exactly as Maono Link builds it.
+/// An additive checksum makes the whole packet sum to zero.
+func writePacket(register: UInt16, value: UInt16) -> [UInt8] {
+    var p = [UInt8](repeating: 0, count: 63)
+    p[0] = 0x0B
+    p[3] = 0x03
+    p[4] = UInt8(register & 0xff)
+    p[5] = UInt8(register >> 8)
+    p[6] = UInt8(value & 0xff)
+    p[7] = UInt8(value >> 8)
+    let sum: Int = 0xD2 + Int(p[4]) + Int(p[5]) + Int(p[6]) + Int(p[7])
+    let checksum = UInt16((0x10000 - sum) & 0xffff)
+    p[8] = UInt8(checksum & 0xff)
+    p[9] = UInt8(checksum >> 8)
+    return p
 }
 
-func readString(_ object: AudioObjectID, _ selector: AudioObjectPropertySelector) -> String? {
-    var addr = address(selector)
-    var value: Unmanaged<CFString>?
-    var size = UInt32(MemoryLayout<Unmanaged<CFString>?>.size)
-    guard AudioObjectGetPropertyData(object, &addr, 0, nil, &size, &value) == noErr, let value else { return nil }
-    return value.takeRetainedValue() as String
+func productName(_ device: IOHIDDevice) -> String {
+    (IOHIDDeviceGetProperty(device, kIOHIDProductKey as CFString) as? String) ?? "Maono microphone"
 }
 
-func readDeviceIDs() -> [AudioObjectID] {
-    var addr = address(kAudioHardwarePropertyDevices)
-    var size: UInt32 = 0
-    var status = AudioObjectGetPropertyDataSize(systemObject, &addr, 0, nil, &size)
-    guard status == noErr else {
-        logError("cannot list audio devices (OSStatus \(status))")
-        return []
-    }
-    var ids = [AudioObjectID](repeating: 0, count: Int(size) / MemoryLayout<AudioObjectID>.size)
-    status = AudioObjectGetPropertyData(systemObject, &addr, 0, nil, &size, &ids)
-    guard status == noErr else {
-        logError("cannot list audio devices (OSStatus \(status))")
-        return []
-    }
-    // The list can shrink between the two calls
-    return Array(ids.prefix(Int(size) / MemoryLayout<AudioObjectID>.size))
-}
-
-func inputChannelCount(_ device: AudioObjectID) -> Int {
-    var addr = address(kAudioDevicePropertyStreamConfiguration, kAudioObjectPropertyScopeInput)
-    var size: UInt32 = 0
-    guard AudioObjectGetPropertyDataSize(device, &addr, 0, nil, &size) == noErr, size > 0 else { return 0 }
-    let raw = UnsafeMutableRawPointer.allocate(byteCount: Int(size), alignment: MemoryLayout<AudioBufferList>.alignment)
-    defer { raw.deallocate() }
-    guard AudioObjectGetPropertyData(device, &addr, 0, nil, &size, raw) == noErr else { return 0 }
-    let buffers = UnsafeMutableAudioBufferListPointer(raw.assumingMemoryBound(to: AudioBufferList.self))
-    return buffers.reduce(0) { $0 + Int($1.mNumberChannels) }
-}
-
-func transportName(_ device: AudioObjectID) -> String {
-    switch readUInt32(device, address(kAudioDevicePropertyTransportType)) {
-    case kAudioDeviceTransportTypeUSB: return "usb"
-    case kAudioDeviceTransportTypeBuiltIn: return "builtin"
-    case kAudioDeviceTransportTypeBluetooth, kAudioDeviceTransportTypeBluetoothLE: return "bluetooth"
-    case kAudioDeviceTransportTypeVirtual: return "virtual"
-    case kAudioDeviceTransportTypeAggregate, kAudioDeviceTransportTypeAutoAggregate: return "aggregate"
-    default: return "other"
+/// Opens the device, writes the packet, then closes it — so the device is never held between operations.
+func writeRegister(_ device: IOHIDDevice, _ payload: [UInt8]) -> IOReturn {
+    let opened = IOHIDDeviceOpen(device, IOOptionBits(kIOHIDOptionsTypeNone))
+    guard opened == kIOReturnSuccess else { return opened }
+    defer { IOHIDDeviceClose(device, IOOptionBits(kIOHIDOptionsTypeNone)) }
+    return payload.withUnsafeBufferPointer {
+        IOHIDDeviceSetReport(device, kIOHIDReportTypeOutput, CFIndex(REPORT_ID), $0.baseAddress!, payload.count)
     }
 }
 
-func muteAddress(_ element: AudioObjectPropertyElement) -> AudioObjectPropertyAddress {
-    address(kAudioDevicePropertyMute, kAudioObjectPropertyScopeInput, element)
-}
-
-/// Elements whose input mute has to change to mute the whole device: the main element when the device has a
-/// settable mute there, otherwise every channel. Empty when the device cannot be muted.
-func muteElements(_ device: AudioObjectID, channels: Int) -> [AudioObjectPropertyElement] {
-    func settable(_ element: AudioObjectPropertyElement) -> Bool {
-        var addr = muteAddress(element)
-        guard AudioObjectHasProperty(device, &addr) else { return false }
-        var settable: DarwinBoolean = false
-        return AudioObjectIsPropertySettable(device, &addr, &settable) == noErr && settable.boolValue
-    }
-    if settable(kAudioObjectPropertyElementMain) { return [kAudioObjectPropertyElementMain] }
-    guard channels > 0 else { return [] }
-    let perChannel = (1...channels).map { AudioObjectPropertyElement($0) }
-    // Muting only some channels would leave the device live
-    return perChannel.allSatisfy(settable) ? perChannel : []
-}
-
-struct InputDevice {
-    let id: AudioObjectID
-    let uid: String
+struct MaonoDevice {
+    let device: IOHIDDevice
     let name: String
-    let manufacturer: String
-    let transport: String
-    let isDefault: Bool
-    let muteElements: [AudioObjectPropertyElement]
-    /// nil when the device cannot be muted or its mute could not be read
-    let muted: Bool?
-
-    var canMute: Bool { !muteElements.isEmpty }
+    /// The input mute as last set, or nil when we have not set it yet.
+    var muted: Bool?
+    /// Whether our last write could open the device (false while Maono Link holds it); optimistic until tried.
+    var controllable: Bool
 
     var json: [String: Any] {
-        [
-            "uid": uid,
-            "name": name,
-            "manufacturer": manufacturer,
-            "transport": transport,
-            "isDefault": isDefault,
-            "canMute": canMute,
-            "muted": muted.map { $0 as Any } ?? NSNull(),
-        ]
+        ["name": name, "controllable": controllable, "muted": muted.map { $0 as Any } ?? NSNull()]
     }
 }
 
-func readInputDevices() -> [InputDevice] {
-    let defaultInput = readUInt32(systemObject, address(kAudioHardwarePropertyDefaultInputDevice))
-    return readDeviceIDs().compactMap { id in
-        let channels = inputChannelCount(id)
-        // Output-only devices, and devices that vanished while being read
-        guard channels > 0, let uid = readString(id, kAudioDevicePropertyDeviceUID) else { return nil }
-        let elements = muteElements(id, channels: channels)
-        let values = elements.map { readUInt32(id, muteAddress($0)) }
-        if values.contains(nil) { logError("cannot read the mute of \(uid)") }
-        return InputDevice(
-            id: id,
-            uid: uid,
-            name: readString(id, kAudioObjectPropertyName) ?? uid,
-            manufacturer: readString(id, kAudioObjectPropertyManufacturer) ?? "",
-            transport: transportName(id),
-            isDefault: id == defaultInput,
-            muteElements: elements,
-            muted: elements.isEmpty || values.contains(nil) ? nil : values.allSatisfy { $0 != 0 }
-        )
-    }
-}
-
-/// Sets the mute of every element; returns the first failing status, or noErr.
-func setMute(_ device: InputDevice, _ muted: Bool) -> OSStatus {
-    for element in device.muteElements {
-        var addr = muteAddress(element)
-        var value: UInt32 = muted ? 1 : 0
-        let status = AudioObjectSetPropertyData(device.id, &addr, 0, nil, UInt32(MemoryLayout<UInt32>.size), &value)
-        if status != noErr { return status }
-    }
-    return noErr
-}
-
-func writeLine(_ object: [String: Any]) {
-    var data: Data
-    do {
-        data = try JSONSerialization.data(withJSONObject: object, options: [.withoutEscapingSlashes])
-    } catch {
-        logError("cannot encode \(object): \(error)")
-        return
-    }
-    data.append(0x0A)
-    data.withUnsafeBytes { buffer in
-        var offset = 0
-        while offset < buffer.count {
-            let written = write(STDOUT_FILENO, buffer.baseAddress! + offset, buffer.count - offset)
-            if written < 0 && errno == EINTR { continue }
-            // The main service is gone
-            if written <= 0 { exit(0) }
-            offset += written
-        }
-    }
-}
-
-/// Serves commands and change notifications. Everything runs on `queue`, so CoreAudio calls and output never interleave.
-final class Server {
-    let queue = DispatchQueue(label: "micmute-helper")
-    private var watched: [AudioObjectID: [AudioObjectPropertyAddress]] = [:]
+/// Tracks the Maono microphones and performs the mute writes. All state lives on the main run loop; the
+/// IOHIDManager callbacks and the stdin reader post their work there, so nothing races.
+final class Helper {
+    let manager = IOHIDManagerCreate(kCFAllocatorDefault, IOOptionBits(kIOHIDOptionsTypeNone))
+    private var devices: [IOHIDDevice: MaonoDevice] = [:]
     private var lastSent: Data?
-    private var sendScheduled = false
-    // One block object, so that the same listener can be removed again
-    private lazy var listener: AudioObjectPropertyListenerBlock = { [unowned self] _, _ in
-        self.scheduleSend()
-    }
 
     func start() {
-        queue.async {
-            for selector in [kAudioHardwarePropertyDevices, kAudioHardwarePropertyDefaultInputDevice] {
-                self.listen(systemObject, address(selector))
-            }
-            self.sendDevices()
+        setMatching()
+        let added: IOHIDDeviceCallback = { context, _, _, device in
+            Unmanaged<Helper>.fromOpaque(context!).takeUnretainedValue().onAdded(device)
         }
-        Thread.detachNewThread {
-            while let line = readLine() {
-                self.queue.async { self.handle(line) }
-            }
-            // stdin closed: the main service quit or crashed
-            self.queue.async { exit(0) }
+        let removed: IOHIDDeviceCallback = { context, _, _, device in
+            Unmanaged<Helper>.fromOpaque(context!).takeUnretainedValue().onRemoved(device)
         }
+        let context = Unmanaged.passUnretained(self).toOpaque()
+        IOHIDManagerRegisterDeviceMatchingCallback(manager, added, context)
+        IOHIDManagerRegisterDeviceRemovalCallback(manager, removed, context)
+        // Schedule on the main run loop, but do NOT open the manager: opening would seize the device.
+        IOHIDManagerScheduleWithRunLoop(manager, CFRunLoopGetMain(), CFRunLoopMode.commonModes.rawValue)
+        sendDevices()
+        readStdin()
     }
 
-    private func listen(_ object: AudioObjectID, _ addr: AudioObjectPropertyAddress) {
-        var addr = addr
-        let status = AudioObjectAddPropertyListenerBlock(object, &addr, queue, listener)
-        if status != noErr { logError("cannot watch property \(addr.mSelector) of object \(object) (OSStatus \(status))") }
+    private func setMatching() {
+        let matching = [kIOHIDVendorIDKey: MAONO_VENDOR_ID, kIOHIDDeviceUsagePageKey: CONSUMER_USAGE_PAGE]
+        IOHIDManagerSetDeviceMatching(manager, matching as CFDictionary)
     }
 
-    /// Coalesces the bursts of notifications a single change causes (e.g. one per channel).
-    private func scheduleSend() {
-        guard !sendScheduled else { return }
-        sendScheduled = true
-        queue.asyncAfter(deadline: .now() + .milliseconds(50)) {
-            self.sendScheduled = false
-            self.sendDevices()
-        }
+    private func onAdded(_ device: IOHIDDevice) {
+        devices[device] = MaonoDevice(device: device, name: productName(device), muted: nil, controllable: true)
+        sendDevices()
     }
 
-    private func sendDevices() {
-        let devices = readInputDevices()
-        watch(devices)
-        let message: [String: Any] = ["event": "devices", "devices": devices.map(\.json)]
-        // Report changes only; a listener can fire without a visible change, e.g. for another channel
-        let snapshot = try? JSONSerialization.data(withJSONObject: message, options: [.sortedKeys])
-        guard snapshot == nil || snapshot != lastSent else { return }
-        lastSent = snapshot
-        writeLine(message)
-    }
-
-    /// Listens to the mute of current devices and to their channel layout, which decides the mute elements.
-    private func watch(_ devices: [InputDevice]) {
-        let current = Set(devices.map(\.id))
-        for (id, addresses) in watched where !current.contains(id) {
-            // Fails when the device is already gone, which takes its listeners with it
-            for var addr in addresses { AudioObjectRemovePropertyListenerBlock(id, &addr, queue, listener) }
-            watched[id] = nil
-        }
-        for device in devices {
-            var addresses = watched[device.id] ?? []
-            let wanted = [address(kAudioDevicePropertyStreamConfiguration, kAudioObjectPropertyScopeInput)]
-                + device.muteElements.map(muteAddress)
-            for addr in wanted where !addresses.contains(where: { sameAddress($0, addr) }) {
-                listen(device.id, addr)
-                addresses.append(addr)
-            }
-            watched[device.id] = addresses
-        }
+    private func onRemoved(_ device: IOHIDDevice) {
+        if devices.removeValue(forKey: device) != nil { sendDevices() }
     }
 
     private func handle(_ line: String) {
@@ -268,56 +117,86 @@ final class Server {
             logError("ignored a request without an id: \(line)")
             return
         }
-        let reply = { (fields: [String: Any]) in writeLine(fields.merging(["id": id]) { $1 }) }
-        let command = request["cmd"] as? String
+        let reply = { (fields: [String: Any]) in self.writeLine(fields.merging(["id": id]) { $1 }) }
 
-        switch command {
+        switch request["cmd"] as? String {
         case "list":
-            reply(["ok": true, "devices": readInputDevices().map(\.json)])
-        case "setMute", "toggleMute":
-            guard let uid = request["uid"] as? String else { return reply(["ok": false, "error": "bad-request"]) }
-            guard let device = readInputDevices().first(where: { $0.uid == uid }) else {
-                return reply(["ok": false, "error": "not-found"])
-            }
-            guard device.canMute else { return reply(["ok": false, "error": "not-supported"]) }
-            let muted: Bool
-            if command == "toggleMute" {
-                guard let current = device.muted else { return reply(["ok": false, "error": "failed"]) }
-                muted = !current
-            } else if let requested = request["muted"] as? Bool {
-                muted = requested
+            reply(["ok": true, "devices": devices.values.map(\.json)])
+        case "setMute":
+            guard let muted = request["muted"] as? Bool else { return reply(["ok": false, "error": "bad-request"]) }
+            guard let key = devices.keys.first else { return reply(["ok": false, "error": "no-device"]) }
+            var entry = devices[key]!
+            let status = writeRegister(entry.device, writePacket(register: MUTE_REGISTER, value: muted ? 1 : 0))
+            entry.controllable = status == kIOReturnSuccess
+            if status == kIOReturnSuccess { entry.muted = muted }
+            devices[key] = entry
+            if status == kIOReturnSuccess {
+                reply(["ok": true, "muted": muted])
             } else {
-                return reply(["ok": false, "error": "bad-request"])
+                // kIOReturnExclusiveAccess / kIOReturnNotOpen: Maono Link holds it
+                reply(["ok": false, "error": status == kIOReturnExclusiveAccess ? "busy" : "failed", "status": Int(status)])
             }
-            let status = setMute(device, muted)
-            guard status == noErr else { return reply(["ok": false, "error": "failed", "status": Int(status)]) }
-            reply(["ok": true, "muted": muted])
-            // Do not rely on the listener alone; a driver may notify late or not at all
-            scheduleSend()
+            sendDevices()
         default:
             reply(["ok": false, "error": "bad-request"])
         }
     }
+
+    private func sendDevices() {
+        let message: [String: Any] = ["event": "devices", "devices": devices.values.map(\.json)]
+        let snapshot = try? JSONSerialization.data(withJSONObject: message, options: [.sortedKeys])
+        guard snapshot == nil || snapshot != lastSent else { return }
+        lastSent = snapshot
+        writeLine(message)
+    }
+
+    private func writeLine(_ object: [String: Any]) {
+        guard var data = try? JSONSerialization.data(withJSONObject: object, options: [.withoutEscapingSlashes]) else {
+            logError("cannot encode \(object)")
+            return
+        }
+        data.append(0x0A)
+        data.withUnsafeBytes { raw in
+            var offset = 0
+            while offset < raw.count {
+                let n = write(STDOUT_FILENO, raw.baseAddress! + offset, raw.count - offset)
+                if n < 0 && errno == EINTR { continue }
+                if n <= 0 { exit(0) } // the main service is gone
+                offset += n
+            }
+        }
+    }
+
+    private func readStdin() {
+        Thread.detachNewThread {
+            while let line = readLine() {
+                CFRunLoopPerformBlock(CFRunLoopGetMain(), CFRunLoopMode.commonModes.rawValue) { self.handle(line) }
+                CFRunLoopWakeUp(CFRunLoopGetMain())
+            }
+            // stdin closed: the main service quit
+            CFRunLoopPerformBlock(CFRunLoopGetMain(), CFRunLoopMode.commonModes.rawValue) { exit(0) }
+            CFRunLoopWakeUp(CFRunLoopGetMain())
+        }
+    }
+
+    /// Prints the devices once (for `micmute-helper list`), writing nothing to them.
+    func listOnce() {
+        setMatching()
+        let found = (IOHIDManagerCopyDevices(manager) as? Set<IOHIDDevice>) ?? []
+        let list = found.map { MaonoDevice(device: $0, name: productName($0), muted: nil, controllable: true).json }
+        let data = try! JSONSerialization.data(withJSONObject: list, options: [.prettyPrinted, .sortedKeys, .withoutEscapingSlashes])
+        print(String(decoding: data, as: UTF8.self))
+    }
 }
 
 signal(SIGPIPE, SIG_IGN)
-// A NULL run loop lets the HAL deliver notifications on a thread of its own; this tool never runs the main run loop
-var noRunLoop: UnsafeRawPointer? = nil
-var runLoopAddress = address(kAudioHardwarePropertyRunLoop)
-let runLoopStatus = AudioObjectSetPropertyData(
-    systemObject, &runLoopAddress, 0, nil, UInt32(MemoryLayout<UnsafeRawPointer?>.size), &noRunLoop)
-if runLoopStatus != noErr { logError("cannot detach notifications from the main run loop (OSStatus \(runLoopStatus))") }
 
 switch CommandLine.arguments.dropFirst().first {
 case "list":
-    let devices = readInputDevices().map(\.json)
-    let data = try! JSONSerialization.data(
-        withJSONObject: devices, options: [.prettyPrinted, .sortedKeys, .withoutEscapingSlashes])
-    print(String(decoding: data, as: UTF8.self))
+    Helper().listOnce()
 case nil, "serve":
-    let server = Server()
-    server.start()
-    dispatchMain()
+    Helper().start()
+    CFRunLoopRun()
 default:
     logError("usage: micmute-helper [serve | list]")
     exit(64)

@@ -1,81 +1,68 @@
 /* global $UD */
 // Property inspector of the "Toggle Mute" action. Ulanzi Studio stores what is sent with sendParamFromPlugin
 // and hands it to the main service (plugin/app.js) as the key's settings. The main service answers "inspect"
-// with the input devices and the one this key mutes, and sends them again whenever they change.
+// with the state of each mute method, and sends it again whenever it changes.
 
 const ACTION_UUID = 'com.ulanzi.ulanzistudio.maonomute.toggle';
-// Same value as AUTO in src/devices.js
-const AUTO = 'auto';
+const DEFAULT_PRIORITY = 'link-hid';
 
 const wrapper = document.querySelector('.uspi-wrapper');
-const deviceSelect = document.getElementById('device');
-const statusText = document.getElementById('status');
+const prioritySelect = document.getElementById('priority');
+const statusBox = document.getElementById('status');
 
-/** @type {{ device?: string, deviceName?: string }} */
+/** @type {{ priority?: string, pos?: number }} */
 let settings = {};
-/** The latest "devices" message of the main service */
+/** The latest "status" message of the main service */
 let report;
 
-const selection = () => settings.device || AUTO;
+const priority = () => settings.priority || DEFAULT_PRIORITY;
+const label = (name) => (name === 'maono-link' ? $UD.t('Maono Link') : $UD.t('USB (direct)'));
 
-function renderDevices() {
-  const options = [new Option($UD.t('Automatic (Maono)'), AUTO)];
-  for (const device of report?.devices ?? []) {
-    const option = new Option(device.name, device.uid);
-    if (!device.canMute) {
-      option.text = $UD.t('{name} (cannot be muted)').replace('{name}', device.name);
-      option.disabled = device.uid !== selection();
-    }
-    options.push(option);
-  }
-  // Keep a saved microphone that is unplugged right now
-  if (!options.some((option) => option.value === selection())) {
-    const name = settings.deviceName || selection();
-    options.push(new Option($UD.t('{name} (not connected)').replace('{name}', name), selection()));
-  }
-  deviceSelect.replaceChildren(...options);
-  deviceSelect.value = selection();
-}
-
-function showStatus(text, kind) {
-  statusText.textContent = text;
-  statusText.className = kind ? `status ${kind}` : 'status';
+function methodStatus(method) {
+  if (method.name === 'maono-link' && !method.available) return { text: $UD.t('not running'), kind: 'off' };
+  if (method.name === 'hid' && !method.available) return { text: $UD.t('microphone not connected'), kind: 'off' };
+  if (method.muted === true) return { text: $UD.t('available') + ' · ' + $UD.t('Muted'), kind: 'ok' };
+  if (method.muted === false) return { text: $UD.t('available') + ' · ' + $UD.t('On'), kind: 'ok' };
+  return { text: $UD.t('available'), kind: 'ok' };
 }
 
 function renderStatus() {
-  if (!report || report.status === 'starting') return showStatus($UD.t('Loading…'));
-  if (report.status !== 'ready') return showStatus($UD.t('Cannot access the audio devices.'), 'error');
-  const target = report.devices.find((device) => device.uid === report.target);
-  if (!target) {
-    return showStatus(
-      selection() === AUTO
-        ? $UD.t('No Maono microphone that can be muted is connected.')
-        : $UD.t('The selected microphone is not connected.'),
-      'error',
-    );
+  statusBox.replaceChildren();
+  if (!report) {
+    const row = document.createElement('div');
+    row.className = 'method';
+    row.textContent = $UD.t('Loading…');
+    statusBox.append(row);
+    return;
   }
-  if (!target.canMute) return showStatus($UD.t('This microphone cannot be muted from the computer.'), 'error');
-  if (typeof target.muted !== 'boolean') return showStatus($UD.t('Cannot access the audio devices.'), 'error');
-  if (target.muted) showStatus(`${target.name}: ${$UD.t('Muted')}`, 'muted');
-  else showStatus(`${target.name}: ${$UD.t('On')}`, 'live');
-}
-
-function render() {
-  renderDevices();
-  renderStatus();
+  for (const method of report.methods) {
+    const { text, kind } = methodStatus(method);
+    const row = document.createElement('div');
+    row.className = 'method';
+    const name = document.createElement('span');
+    name.className = 'label';
+    name.textContent = label(method.name);
+    const value = document.createElement('span');
+    value.className = `value ${kind}`;
+    value.textContent = text;
+    row.append(name, value);
+    statusBox.append(row);
+  }
 }
 
 function load(message) {
   settings = message.param && typeof message.param === 'object' ? { ...message.param } : {};
-  render();
+  prioritySelect.value = priority();
+  renderStatus();
 }
 
 $UD.connect(ACTION_UUID);
 
 $UD.onConnected(async () => {
-  // Texts made by this script need the localization loaded first
+  // Options this script localizes need the localization loaded first
   await $UD.localizeUI();
-  render();
+  prioritySelect.value = priority();
+  renderStatus();
   wrapper.classList.remove('hidden');
   $UD.sendToPlugin({ type: 'inspect' });
 });
@@ -83,15 +70,12 @@ $UD.onAdd(load);
 $UD.onParamFromApp(load);
 
 $UD.onSendToPropertyInspector(({ payload }) => {
-  if (payload?.type !== 'devices') return;
+  if (payload?.type !== 'status') return;
   report = payload;
-  render();
+  renderStatus();
 });
 
-deviceSelect.addEventListener('change', () => {
-  const uid = deviceSelect.value;
-  const device = report?.devices.find((candidate) => candidate.uid === uid);
-  settings = uid === AUTO ? { device: AUTO } : { device: uid, deviceName: device?.name ?? settings.deviceName };
-  // The main service answers with the new target once Ulanzi Studio has passed the settings on
+prioritySelect.addEventListener('change', () => {
+  settings = { ...settings, priority: prioritySelect.value };
   $UD.sendParamFromPlugin(settings);
 });

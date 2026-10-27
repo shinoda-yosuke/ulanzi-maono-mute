@@ -5,8 +5,7 @@ import path from 'node:path';
 import { describe, it } from 'node:test';
 import { PLUGIN_DIR, ROOT } from '../scripts/lib/paths.mjs';
 import { validatePlugin } from '../scripts/lib/validate-plugin.mjs';
-import { AUTO } from '../src/devices.js';
-import { ACTION_UUID, MESSAGES, PLUGIN_UUID, STATES, UNAVAILABLE_ICON } from '../src/plugin.js';
+import { ACTION_UUID, DEFAULT_PRIORITY, MESSAGES, PLUGIN_UUID, PRIORITIES, STATES, UNAVAILABLE_ICON } from '../src/plugin.js';
 
 const read = (...segments) => readFileSync(path.join(PLUGIN_DIR, ...segments), 'utf8');
 const manifest = JSON.parse(read('manifest.json'));
@@ -23,7 +22,12 @@ describe('plugin folder', () => {
     assert.equal(manifest.UUID, PLUGIN_UUID);
     assert.deepEqual(manifest.Actions.map((action) => action.UUID), [ACTION_UUID]);
     assert.match(inspectorScript, new RegExp(`'${ACTION_UUID.replaceAll('.', '\\.')}'`));
-    assert.match(inspectorScript, new RegExp(`const AUTO = '${AUTO}';`));
+    assert.match(inspectorScript, new RegExp(`DEFAULT_PRIORITY = '${DEFAULT_PRIORITY}'`));
+  });
+
+  it('offers exactly the priorities the main service understands', () => {
+    const options = [...inspectorHtml.matchAll(/<option value="([^"]+)"/g)].map((match) => match[1]);
+    assert.deepEqual(options.sort(), Object.keys(PRIORITIES).sort());
   });
 
   it('declares the states the main service sets, and leaves switching them to it', () => {
@@ -37,7 +41,7 @@ describe('plugin folder', () => {
     assert.ok(existsSync(path.join(PLUGIN_DIR, UNAVAILABLE_ICON)), UNAVAILABLE_ICON);
   });
 
-  it('runs on macOS only, where the CoreAudio helper exists', () => {
+  it('runs on macOS only, where the CoreAudio/HID helper exists', () => {
     assert.deepEqual(manifest.OS.map((os) => os.Platform), ['mac']);
   });
 

@@ -1,6 +1,6 @@
 {
   "Name": "Silenciar microfone Maono",
-  "Description": "Silencia e reativa um microfone USB Maono com uma tecla. A tecla mostra se o microfone está silenciado.",
+  "Description": "Silencia e reativa um microfone USB Maono com uma tecla, tal como o Maono Link. A tecla mostra se o microfone está silenciado.",
   "Actions": [
     {
       "Name": "Alternar silêncio",
@@ -8,20 +8,25 @@
     }
   ],
   "Localization": {
-    "Microphone": "Microfone",
+    "Mute method": "Método de silêncio",
+    "Maono Link first, then USB": "Primeiro Maono Link, depois USB",
+    "USB first, then Maono Link": "Primeiro USB, depois Maono Link",
+    "Maono Link only": "Apenas Maono Link",
+    "USB (direct) only": "Apenas USB (direto)",
     "Status": "Estado",
-    "Automatic (Maono)": "Automático (Maono)",
-    "{name} (cannot be muted)": "{name} (não pode ser silenciado)",
-    "{name} (not connected)": "{name} (não ligado)",
-    "Loading…": "A carregar…",
-    "On": "Ligado",
+    "Maono Link": "Maono Link",
+    "USB (direct)": "USB (direto)",
+    "not running": "não está em execução",
+    "microphone not connected": "microfone não ligado",
+    "available": "disponível",
     "Muted": "Silenciado",
-    "Automatic mutes the Maono microphone connected over USB, ahead of virtual devices such as Maono AI Microphone.": "O modo automático silencia o microfone Maono ligado por USB, antes de dispositivos virtuais como o Maono AI Microphone.",
-    "The key turns red while the microphone is muted, also when another app mutes it.": "A tecla fica vermelha enquanto o microfone está silenciado, também quando outra aplicação o silencia.",
-    "No Maono microphone that can be muted is connected.": "Não está ligado nenhum microfone Maono que possa ser silenciado.",
-    "The selected microphone is not connected.": "O microfone selecionado não está ligado.",
-    "This microphone cannot be muted from the computer.": "Este microfone não pode ser silenciado a partir do computador.",
-    "Cannot access the audio devices.": "Não é possível aceder aos dispositivos de áudio.",
+    "On": "Ligado",
+    "Loading…": "A carregar…",
+    "Maono Link mutes exactly like its own mute button. USB (direct) talks to the microphone itself, so it works even when Maono Link is closed.": "O Maono Link age exatamente como o seu próprio botão de silêncio. O USB (direto) comunica com o próprio microfone, por isso funciona mesmo com o Maono Link fechado.",
+    "While Maono Link is showing the microphone it holds it, so the USB method is busy then; the key falls back to the other method.": "Enquanto o Maono Link mostra o microfone, ocupa-o; nessa altura o método USB fica ocupado e a tecla recorre ao outro método.",
+    "Maono Link is not running.": "O Maono Link não está em execução.",
+    "The microphone is not connected.": "O microfone não está ligado.",
+    "No way to mute the microphone is available.": "Não há nenhum método disponível para silenciar.",
     "Could not change the mute of the microphone.": "Não foi possível alterar o silêncio do microfone."
   }
 }

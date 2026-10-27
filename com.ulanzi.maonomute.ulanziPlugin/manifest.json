@@ -1,7 +1,7 @@
 {
   "Author": "shinoda-yosuke",
   "Name": "Maono Mic Mute",
-  "Description": "Mute and unmute a Maono USB microphone with a key press. The key shows whether the microphone is muted.",
+  "Description": "Mute and unmute a Maono USB microphone with a key press, the same way Maono Link does. The key shows whether the microphone is muted.",
   "Icon": "assets/icons/plugin.png",
   "Version": "1.0.0",
   "Category": "Maono Mic Mute",

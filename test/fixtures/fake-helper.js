@@ -1,7 +1,7 @@
 #!/usr/bin/env node
-// Stand-in for micmute-helper that speaks the same JSON lines protocol without touching real devices.
-// The devices live in the JSON file named by FAKE_HELPER_STATE: commands write it, and a test that rewrites it
-// plays the part of another app changing a device (the helper then reports the devices again).
+// Stand-in for micmute-helper that speaks the same JSON lines protocol without touching real hardware.
+// The devices live in the JSON file named by FAKE_HELPER_STATE: setMute writes it, and a test that rewrites it
+// plays the part of the microphone being plugged in or out (the helper then reports the devices again).
 import { readFileSync, watchFile, writeFileSync } from 'node:fs';
 import readline from 'node:readline';
 
@@ -11,7 +11,7 @@ if (!file) {
   process.exit(64);
 }
 
-/** @returns {import('../../src/devices.js').Device[]} */
+/** @returns {import('../../src/hid.js').HidDevice[]} */
 const read = () => JSON.parse(readFileSync(file, 'utf8'));
 const send = (message) => process.stdout.write(`${JSON.stringify(message)}\n`);
 
@@ -27,18 +27,18 @@ report();
 watchFile(file, { interval: 20 }, report);
 
 readline.createInterface({ input: process.stdin }).on('line', (line) => {
-  const { id, cmd, uid, muted } = JSON.parse(line);
+  const { id, cmd, muted } = JSON.parse(line);
   const reply = (fields) => send({ ...fields, id });
   if (cmd === 'list') return reply({ ok: true, devices: read() });
-  if (cmd !== 'setMute' && cmd !== 'toggleMute') return reply({ ok: false, error: 'bad-request' });
+  if (cmd !== 'setMute') return reply({ ok: false, error: 'bad-request' });
 
   const devices = read();
-  const device = devices.find((candidate) => candidate.uid === uid);
-  if (!device) return reply({ ok: false, error: 'not-found' });
-  if (!device.canMute) return reply({ ok: false, error: 'not-supported' });
-  device.muted = cmd === 'toggleMute' ? !device.muted : muted;
+  const device = devices[0];
+  if (!device) return reply({ ok: false, error: 'no-device' });
+  if (!device.controllable) return reply({ ok: false, error: 'busy' });
+  device.muted = muted;
   writeFileSync(file, JSON.stringify(devices));
-  reply({ ok: true, muted: device.muted });
+  reply({ ok: true, muted });
   report();
 });
 

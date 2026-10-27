@@ -1,24 +1,19 @@
 import { spawn } from 'node:child_process';
 import { EventEmitter } from 'node:events';
 import { accessSync, chmodSync, constants } from 'node:fs';
-import readline from 'node:readline';
 
 /**
- * @typedef {object} HelperState
- * @property {'stopped' | 'starting' | 'ready' | 'failed'} status
- * @property {import('./devices.js').Device[]} devices empty unless ready
- * @property {string} [error] why the helper stopped (status "failed")
+ * @typedef {object} HidDevice
+ * @property {string} name
+ * @property {boolean} controllable false while Maono Link holds the microphone exclusively
+ * @property {boolean | null} muted as last set over HID, or null if never set
  */
 
-export class MuteHelperError extends Error {
-  /**
-   * @param {string} message
-   * @param {string} code an error of the helper ("not-found", "not-supported", "failed", "bad-request"),
-   *   "not-running" or "timeout"
-   */
+export class HidError extends Error {
+  /** @param {string} code "no-device" | "busy" | "failed" | "bad-request" | "not-running" | "timeout" */
   constructor(message, code) {
     super(message);
-    this.name = 'MuteHelperError';
+    this.name = 'HidError';
     this.code = code;
   }
 }
@@ -29,12 +24,15 @@ const RESTART_DELAYS = [1000, 2000, 5000, 15000, 30000];
 const HEALTHY_RUN = 60_000;
 
 /**
- * Runs micmute-helper (native/micmute-helper.swift), keeps the input devices it reports and sends it commands.
- * Emits "change" with the new state whenever `state` changes. A helper that stops is restarted after a delay.
+ * Runs micmute-helper (native/micmute-helper.swift) and mutes a Maono microphone over HID through it.
+ * Emits "change" whenever the devices it reports change. A helper that stops is restarted after a delay.
+ *
+ * The plugin addresses "pos" (a Maono Link device position), but the helper targets the single Maono HID
+ * microphone, so pos is currently ignored here.
  */
-export class MuteHelper extends EventEmitter {
-  /** @type {HelperState} */
-  state = { status: 'stopped', devices: [] };
+export class HidMute extends EventEmitter {
+  /** @type {HidDevice[]} */
+  devices = [];
 
   #command;
   #log;
@@ -47,6 +45,7 @@ export class MuteHelper extends EventEmitter {
   #nextId = 1;
   #failures = 0;
   #restartTimer = null;
+  #stopped = true;
 
   /**
    * @param {object} options
@@ -65,38 +64,52 @@ export class MuteHelper extends EventEmitter {
     this.#requestTimeout = requestTimeout;
   }
 
-  /** Starts the helper unless it is running or waiting to restart. */
+  /** Whether a Maono microphone is present and can be driven over HID right now. */
+  get available() {
+    return this.devices.some((device) => device.controllable);
+  }
+
+  /** The mute the microphone was last set to over HID, or null if unknown. pos is ignored (single device). */
+  isMuted() {
+    return this.devices[0]?.muted ?? null;
+  }
+
   start() {
     if (this.#child || this.#restartTimer) return;
+    this.#stopped = false;
     this.#launch();
   }
 
-  /** Stops the helper without restarting it. */
   stop() {
+    this.#stopped = true;
     clearTimeout(this.#restartTimer);
     this.#restartTimer = null;
     const child = this.#child;
     this.#child = null;
     child?.kill();
     this.#rejectPending('not-running', 'The helper was stopped');
-    this.#setState({ status: 'stopped', devices: [] });
+    this.#setDevices([]);
   }
 
   /**
-   * Sends a command to the helper and resolves with its answer; rejects with a MuteHelperError.
-   * @param {{ cmd: string } & Record<string, unknown>} command
-   * @returns {Promise<Record<string, unknown>>}
+   * Mutes or unmutes the Maono microphone over HID.
+   * @param {number} _pos ignored; the helper targets the single Maono microphone
+   * @param {boolean} muted
+   * @returns {Promise<boolean>}
    */
-  request(command) {
+  async setMute(_pos, muted) {
+    const reply = await this.#request({ cmd: 'setMute', muted });
+    return reply.muted;
+  }
+
+  #request(command) {
     const child = this.#child;
-    if (!child || this.state.status !== 'ready') {
-      return Promise.reject(new MuteHelperError(`Cannot send ${command.cmd}: the helper is not running`, 'not-running'));
-    }
+    if (!child) return Promise.reject(new HidError(`Cannot send ${command.cmd}: the helper is not running`, 'not-running'));
     const id = this.#nextId++;
     return new Promise((resolve, reject) => {
       const timer = setTimeout(() => {
         this.#pending.delete(id);
-        reject(new MuteHelperError(`No answer to ${command.cmd} within ${this.#requestTimeout} ms`, 'timeout'));
+        reject(new HidError(`No answer to ${command.cmd} within ${this.#requestTimeout} ms`, 'timeout'));
       }, this.#requestTimeout);
       this.#pending.set(id, { command, resolve, reject, timer });
       child.stdin.write(`${JSON.stringify({ ...command, id })}\n`);
@@ -105,35 +118,48 @@ export class MuteHelper extends EventEmitter {
 
   #launch() {
     this.#ensureExecutable();
-    this.#setState({ status: 'starting', devices: [] });
     const startedAt = Date.now();
     const child = this.#spawn(this.#command, [], { stdio: ['pipe', 'pipe', 'pipe'] });
     this.#child = child;
 
     let gone = false;
     const onGone = (reason) => {
-      if (gone) return;
+      if (gone || this.#child !== child) return;
       gone = true;
-      // stop() already cleaned up
-      if (this.#child !== child) return;
       this.#child = null;
       this.#rejectPending('not-running', `The helper stopped: ${reason}`);
+      this.#setDevices([]);
+      if (this.#stopped) return;
       this.#failures = Date.now() - startedAt >= HEALTHY_RUN ? 1 : this.#failures + 1;
       const delay = this.#restartDelays[Math.min(this.#failures, this.#restartDelays.length) - 1];
       this.#log(`micmute-helper stopped (${reason}); restarting in ${delay} ms`, 'error');
-      this.#setState({ status: 'failed', devices: [], error: reason });
       this.#restartTimer = setTimeout(() => {
         this.#restartTimer = null;
         this.#launch();
       }, delay);
     };
-    // "error" covers a helper that could not be started (missing, not executable); "exit" may or may not follow it.
-    // "close" comes after the output has been read, so no answer is lost.
     child.on('error', (error) => onGone(error.message));
     child.on('close', (code, signal) => onGone(signal ? `killed by ${signal}` : `exit code ${code}`));
     child.stdin.on('error', (error) => this.#log(`Cannot write to micmute-helper: ${error.message}`, 'warn'));
-    readline.createInterface({ input: child.stdout }).on('line', (line) => this.#receive(line));
-    readline.createInterface({ input: child.stderr }).on('line', (line) => this.#log(line, 'warn'));
+    // Parse the helper's line-delimited JSON ourselves rather than with node:readline, which esbuild's bundle
+    // does not wire up reliably for a child's stdout.
+    this.#readLines(child.stdout, (line) => this.#receive(line));
+    this.#readLines(child.stderr, (line) => this.#log(line, 'warn'));
+  }
+
+  /** Calls `onLine` for each newline-delimited line of a stream. */
+  #readLines(stream, onLine) {
+    let buffer = '';
+    stream.setEncoding('utf8');
+    stream.on('data', (chunk) => {
+      buffer += chunk;
+      let index;
+      while ((index = buffer.indexOf('\n')) >= 0) {
+        const line = buffer.slice(0, index).trim();
+        buffer = buffer.slice(index + 1);
+        if (line) onLine(line);
+      }
+    });
   }
 
   /** Unpacking a zip can drop the executable bit. A missing helper is left to spawn to report. */
@@ -161,7 +187,7 @@ export class MuteHelper extends EventEmitter {
       return;
     }
     if (message.event === 'devices') {
-      this.#setState({ status: 'ready', devices: message.devices });
+      this.#setDevices(message.devices);
       return;
     }
     const pending = this.#pending.get(message.id);
@@ -174,21 +200,23 @@ export class MuteHelper extends EventEmitter {
     if (message.ok) {
       pending.resolve(message);
     } else {
-      const status = message.status === undefined ? '' : ` (OSStatus ${message.status})`;
-      pending.reject(new MuteHelperError(`${pending.command.cmd} failed: ${message.error}${status}`, message.error));
+      const status = message.status === undefined ? '' : ` (status ${message.status})`;
+      pending.reject(new HidError(`${pending.command.cmd} failed: ${message.error}${status}`, message.error));
     }
   }
 
   #rejectPending(code, reason) {
     for (const { reject, timer } of this.#pending.values()) {
       clearTimeout(timer);
-      reject(new MuteHelperError(reason, code));
+      reject(new HidError(reason, code));
     }
     this.#pending.clear();
   }
 
-  #setState(state) {
-    this.state = state;
-    this.emit('change', state);
+  #setDevices(devices) {
+    const next = JSON.stringify(devices);
+    if (next === JSON.stringify(this.devices)) return;
+    this.devices = devices;
+    this.emit('change');
   }
 }
